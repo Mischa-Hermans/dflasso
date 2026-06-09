@@ -1,0 +1,50 @@
+Package: dflasso
+Title: Decision-Focused Lasso for Predict-Then-Optimize Problems
+Version: 0.1.0
+Authors@R:
+    person("Mischa", "Hermans", email = "mischa.hermans@maastrichtuniversity.nl",
+           role = c("aut", "cre"))
+Description: In predict-then-optimise problems you predict costs from features,
+    then optimise. dflasso predicts those costs with a lasso that keeps the
+    features which track decision regret, not prediction accuracy, then solves
+    the optimisation on new data and measures the regret against an ordinary
+    prediction-focused fit.
+License: MIT + file LICENSE
+URL: https://github.com/Mischa-Hermans/dflasso,
+    https://Mischa-Hermans.github.io/dflasso/
+BugReports: https://github.com/Mischa-Hermans/dflasso/issues
+Depends:
+    R (>= 4.1.0)
+Imports:
+    methods,
+    glmnet,
+    Rcpp,
+    foreach,
+    parallel,
+    doParallel,
+    doRNG,
+    tibble,
+    tidyselect,
+    rlang,
+    ggplot2,
+    generics,
+    lpSolve
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    covr,
+    ROI,
+    ROI.plugin.glpk,
+    ggrepel,
+    igraph
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+SystemRequirements: C++17

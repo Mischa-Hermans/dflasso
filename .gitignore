@@ -1,0 +1,29 @@
+# R session and user files
+.Rhistory
+.RData
+.Rproj.user/
+.Ruserdata
+
+# Compiled C++ objects and shared libraries
+src/*.o
+src/*.so
+src/*.dll
+
+# R CMD build and check outputs
+*.tar.gz
+*.Rcheck/
+/doc/
+/Meta/
+
+# Rendered README preview
+README.html
+
+# Built pkgdown site
+docs/
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Build logs
+*.log

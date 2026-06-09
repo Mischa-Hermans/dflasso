@@ -1,0 +1,16 @@
+^planning$
+^data-raw$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^dflasso_overview\.log$
+^\.github$
+^README\.Rmd$
+^cran-comments\.md$
+^LICENSE\.md$
+^Dockerfile$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.vscode$
+^\.idea$
+^\.DS_Store$
