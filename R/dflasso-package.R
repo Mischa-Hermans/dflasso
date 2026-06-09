@@ -67,6 +67,8 @@
 #' }
 #'
 #' @keywords internal
+#' @useDynLib dflasso, .registration = TRUE
+#' @importFrom Rcpp sourceCpp
 #' @importFrom ggplot2 autoplot
 #' @importFrom graphics plot
 #' @importFrom rlang .data
