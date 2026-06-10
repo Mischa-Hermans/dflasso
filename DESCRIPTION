@@ -56,4 +56,5 @@ Collate:
     'data-helpers.R'
     'dflasso-package.R'
     'problem-constructors.R'
+    'simulate.R'
     'solve-decision.R'
