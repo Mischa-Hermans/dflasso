@@ -55,6 +55,8 @@ Collate:
     'control.R'
     'data-helpers.R'
     'dflasso-package.R'
+    'fitted-class.R'
+    'fit.R'
     'problem-constructors.R'
     'simulate.R'
     'solve-decision.R'
