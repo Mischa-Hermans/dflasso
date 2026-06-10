@@ -54,3 +54,4 @@ Collate:
     'accessors.R'
     'dflasso-package.R'
     'problem-constructors.R'
+    'solve-decision.R'

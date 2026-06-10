@@ -14,7 +14,7 @@
 #'   decision-quality step only when every row in its support has an observed
 #'   cost. `NULL` (default) assumes every row of an instance may be used,
 #'   which on partially observed data can make scenarios ineligible. Supply one
-#'   when the solver provably ignores some rows (so those rows being unobserved
+#'   when the solver can never use some rows (so those rows being unobserved
 #'   should not disqualify the scenario), most often when only a subset of
 #'   elements can ever enter a feasible decision.
 #' @param name Optional character label shown by `show()`. `NULL` (default)

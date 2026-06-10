@@ -53,7 +53,8 @@ Other dflasso problems:
 \code{\link{knapsack_problem}()},
 \code{\link{optimization_problem}()},
 \code{\link{sense}()},
-\code{\link{shortest_path_problem}()}
+\code{\link{shortest_path_problem}()},
+\code{\link{solve_decision}()}
 }
 \concept{dflasso problems}
 \keyword{internal}
