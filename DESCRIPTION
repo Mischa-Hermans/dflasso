@@ -48,3 +48,9 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 SystemRequirements: C++17
+Collate: 
+    'RcppExports.R'
+    'problem-classes.R'
+    'accessors.R'
+    'dflasso-package.R'
+    'problem-constructors.R'
