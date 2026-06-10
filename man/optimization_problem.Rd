@@ -24,7 +24,7 @@ decision. This sets the coverage rule: a scenario is eligible for the
 decision-quality step only when every row in its support has an observed
 cost. \code{NULL} (default) assumes every row of an instance may be used,
 which on partially observed data can make scenarios ineligible. Supply one
-when the solver provably ignores some rows (so those rows being unobserved
+when the solver can never use some rows (so those rows being unobserved
 should not disqualify the scenario), most often when only a subset of
 elements can ever enter a feasible decision.}
 
@@ -59,6 +59,7 @@ Other dflasso problems:
 \code{\link{capital_allocation_problem}()},
 \code{\link{knapsack_problem}()},
 \code{\link{sense}()},
-\code{\link{shortest_path_problem}()}
+\code{\link{shortest_path_problem}()},
+\code{\link{solve_decision}()}
 }
 \concept{dflasso problems}

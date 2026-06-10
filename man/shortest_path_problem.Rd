@@ -44,6 +44,7 @@ Other dflasso problems:
 \code{\link{capital_allocation_problem}()},
 \code{\link{knapsack_problem}()},
 \code{\link{optimization_problem}()},
-\code{\link{sense}()}
+\code{\link{sense}()},
+\code{\link{solve_decision}()}
 }
 \concept{dflasso problems}
