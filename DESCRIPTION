@@ -52,6 +52,8 @@ Collate:
     'RcppExports.R'
     'problem-classes.R'
     'accessors.R'
+    'control.R'
+    'data-helpers.R'
     'dflasso-package.R'
     'problem-constructors.R'
     'solve-decision.R'
