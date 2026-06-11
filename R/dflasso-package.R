@@ -78,8 +78,8 @@
 utils::globalVariables(c(
   "feat_01", "realized_return", "realized_value", "travel_time",
   "scenario", "asset_id", "item_id", "weight", "arc_id",
-  "from_node", "to_node", "culvert_depth", "river_gauge",
-  "culvert_load", "river_load", "base_time", "congestion",
+  "from_node", "to_node", "flood_depth", "mud_depth",
+  "flood_load", "mud_load", "base_time", "congestion",
   "surface", "rainfall", "date", "origin", "destination",
   "closed_arc_ids", "node_id", "region",
   "element_id", "decision", "chosen", "predicted_cost", "contribution",
