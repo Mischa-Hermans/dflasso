@@ -64,8 +64,11 @@ head(routing$arc_day_features)
 \code{\link[=shortest_path_problem]{shortest_path_problem()}}
 
 Other dflasso data helpers: 
+\code{\link{aid_routing}},
+\code{\link{capital_allocation_demo}},
 \code{\link{dfl_data}()},
 \code{\link{make_instances}()},
+\code{\link{prepare_instances}()},
 \code{\link{simulate_capital_allocation}()},
 \code{\link{simulate_knapsack}()}
 }

@@ -55,8 +55,11 @@ attr(sim$data, "decision_relevant_features")
 \code{\link[=capital_allocation_problem]{capital_allocation_problem()}}
 
 Other dflasso data helpers: 
+\code{\link{aid_routing}},
+\code{\link{capital_allocation_demo}},
 \code{\link{dfl_data}()},
 \code{\link{make_instances}()},
+\code{\link{prepare_instances}()},
 \code{\link{simulate_knapsack}()},
 \code{\link{simulate_shortest_path}()}
 }

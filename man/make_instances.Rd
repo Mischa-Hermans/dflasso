@@ -49,7 +49,10 @@ make_instances(scenario, capacity = 50)
 \code{\link[=dfl_data]{dfl_data()}}, \code{\link[=dfl_fit]{dfl_fit()}}
 
 Other dflasso data helpers: 
+\code{\link{aid_routing}},
+\code{\link{capital_allocation_demo}},
 \code{\link{dfl_data}()},
+\code{\link{prepare_instances}()},
 \code{\link{simulate_capital_allocation}()},
 \code{\link{simulate_knapsack}()},
 \code{\link{simulate_shortest_path}()}

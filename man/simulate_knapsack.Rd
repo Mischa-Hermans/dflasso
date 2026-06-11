@@ -52,8 +52,11 @@ instances <- make_instances(
 \code{\link[=knapsack_problem]{knapsack_problem()}}
 
 Other dflasso data helpers: 
+\code{\link{aid_routing}},
+\code{\link{capital_allocation_demo}},
 \code{\link{dfl_data}()},
 \code{\link{make_instances}()},
+\code{\link{prepare_instances}()},
 \code{\link{simulate_capital_allocation}()},
 \code{\link{simulate_shortest_path}()}
 }
