@@ -63,7 +63,7 @@
 #' @importFrom glmnet cv.glmnet glmnet coef.glmnet
 #' @importFrom foreach foreach %dopar% %do% registerDoSEQ
 #' @importFrom doRNG %dorng%
-#' @importFrom stats setNames quantile rbinom predict
+#' @importFrom stats setNames rbinom predict
 #' @export
 #' @include fitted-class.R
 dfl_fit <- function(data_or_x,
@@ -801,9 +801,7 @@ reshape_penalty <- function(adaptive_weight, proxy_score, control) {
   rescaled <- pmin(proxy_score / control$proxy_score_reference, 1)
   discount <- exp(-control$kappa * rescaled)
 
-  weight_gate <- stats::quantile(adaptive_weight, 0.70, names = FALSE)
-  gated <- adaptive_weight >= weight_gate &
-    adaptive_weight >= eligibility_threshold &
+  gated <- adaptive_weight >= eligibility_threshold &
     proxy_score > control$score_floor
   weight <- adaptive_weight
   weight[gated] <- pmin(adaptive_weight[gated], control$w_max * discount[gated])
