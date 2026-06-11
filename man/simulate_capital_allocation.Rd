@@ -36,12 +36,13 @@ allocation, so the decision focus has something to recover.
 }
 \details{
 The true return of asset \code{i} in scenario \code{s} is
-\verb{mu + sum_pred beta_pred z_sj + sum_dec beta_dec d_sj + noise}. The
+\verb{mu + sum_pred beta_pred z_sj + sum_dec beta_dec x_dec_isj + noise}. The
 prediction-heavy features \code{z_sj} are scenario-level, shared by every asset,
-and predict the return strongly. The decision-relevant features \code{d_sj} are
-scenario-level draws entering with a small coefficient, so a prediction-tuned
-lasso under-selects them while the decision-relevance proxy reads their
-scenario-level signal. The remaining features are noise.
+and predict the return strongly. Each decision-relevant feature is built per
+asset as \verb{g_sj loading_i + small noise}, varying across assets within a
+scenario but entering with only a small coefficient, so a prediction-tuned
+lasso under-selects it while the decision-relevance proxy reads its
+scenario-level mean. The remaining features are noise.
 }
 \examples{
 sim <- simulate_capital_allocation(8, 6, 6, seed = 1)
