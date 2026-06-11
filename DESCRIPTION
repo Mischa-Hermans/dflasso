@@ -71,6 +71,7 @@ Collate:
     'plot.R'
     'prepare.R'
     'problem-constructors.R'
+    'reexports.R'
     'regret.R'
     'simulate.R'
     'solve-decision.R'
