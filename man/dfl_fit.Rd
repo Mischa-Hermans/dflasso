@@ -92,5 +92,11 @@ proxy_score(fit)
 \seealso{
 \code{\link[=dfl_control]{dfl_control()}}, \code{\link[=dfl_data]{dfl_data()}}, \code{\link[=proxy_score]{proxy_score()}},
 \linkS4class{DecisionFocusedLasso}
+
+Other dflasso workflow: 
+\code{\link{decide}()},
+\code{\link{dfl_score}()},
+\code{\link{predict-coef}},
+\code{\link{regret}()}
 }
 \concept{dflasso workflow}
