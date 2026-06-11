@@ -36,7 +36,8 @@ single capacity. Item weights are fixed random integers across scenarios.
 The true value of item \code{i} in scenario \code{s} follows the same equation as
 \code{\link[=simulate_capital_allocation]{simulate_capital_allocation()}}: prediction-heavy scenario-level features
 move every item's value together, the two decision-relevant features are
-scenario-level draws with a small coefficient, and the rest are noise.
+per-item (\verb{g_sj loading_i + small noise}) with a small coefficient, and the
+rest are noise.
 }
 \examples{
 sim <- simulate_knapsack(6, 8, 5, seed = 1)

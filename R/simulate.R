@@ -8,12 +8,13 @@
 #' allocation, so the decision focus has something to recover.
 #'
 #' The true return of asset `i` in scenario `s` is
-#' `mu + sum_pred beta_pred z_sj + sum_dec beta_dec d_sj + noise`. The
+#' `mu + sum_pred beta_pred z_sj + sum_dec beta_dec x_dec_isj + noise`. The
 #' prediction-heavy features `z_sj` are scenario-level, shared by every asset,
-#' and predict the return strongly. The decision-relevant features `d_sj` are
-#' scenario-level draws entering with a small coefficient, so a prediction-tuned
-#' lasso under-selects them while the decision-relevance proxy reads their
-#' scenario-level signal. The remaining features are noise.
+#' and predict the return strongly. Each decision-relevant feature is built per
+#' asset as `g_sj loading_i + small noise`, varying across assets within a
+#' scenario but entering with only a small coefficient, so a prediction-tuned
+#' lasso under-selects it while the decision-relevance proxy reads its
+#' scenario-level mean. The remaining features are noise.
 #'
 #' @param n_scenarios Number of scenarios, each one optimisation instance.
 #' @param n_assets Number of assets per scenario.
@@ -79,7 +80,8 @@ simulate_capital_allocation <- function(n_scenarios, n_assets, n_features,
 #' The true value of item `i` in scenario `s` follows the same equation as
 #' [simulate_capital_allocation()]: prediction-heavy scenario-level features
 #' move every item's value together, the two decision-relevant features are
-#' scenario-level draws with a small coefficient, and the rest are noise.
+#' per-item (`g_sj loading_i + small noise`) with a small coefficient, and the
+#' rest are noise.
 #'
 #' @inheritParams simulate_capital_allocation
 #' @param n_items Number of items per scenario.
@@ -271,6 +273,14 @@ draw_independent_signal <- function(n_scenarios, n_features) {
   )
 }
 
+element_loadings <- function(n_elements, n_decision) {
+  centre <- seq(-0.6, 0.6, length.out = n_elements)
+  vapply(seq_len(n_decision), function(decision_index) {
+    shifted <- centre * (1 + 0.15 * (decision_index - 1L)) + 0.7
+    if (decision_index %% 2L == 0L) rev(shifted) else shifted
+  }, numeric(n_elements))
+}
+
 generate_element_table <- function(scenario_signal, roles,
                                     n_scenarios, n_elements,
                                     noise_sd, intercept = 0) {
@@ -281,7 +291,15 @@ generate_element_table <- function(scenario_signal, roles,
   element_index <- rep(seq_len(n_elements), times = n_scenarios)
   n_rows <- n_scenarios * n_elements
 
+  loadings <- element_loadings(n_elements, length(roles$decision))
   features <- scenario_signal[scenario_index, , drop = FALSE]
+  for (column_position in seq_along(roles$decision)) {
+    decision_column <- roles$decision[column_position]
+    features[, decision_column] <-
+      scenario_signal[scenario_index, decision_column] *
+        loadings[element_index, column_position] +
+        stats::rnorm(n_rows, sd = 0.05)
+  }
   colnames(features) <- feature_names(ncol(scenario_signal))
 
   prediction_contribution <- as.numeric(

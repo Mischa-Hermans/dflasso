@@ -779,7 +779,8 @@ oracle_objectives <- function(problem, instances, inputs, eligible_scenarios) {
 }
 
 decision_objective <- function(realized_cost, decision) {
-  sum(realized_cost * decision)
+  chosen <- decision != 0
+  sum(realized_cost[chosen] * decision[chosen])
 }
 
 scenario_level_features <- function(inputs, eligible_scenarios) {
