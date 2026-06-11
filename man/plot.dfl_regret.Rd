@@ -25,8 +25,7 @@ A ggplot object.
 \description{
 Draws the per-instance regret of the decision-focused fit against the
 prediction-focused baseline on the same held-out instances, lower is better,
-with the printed average marked. Shows whether the average holds across
-instances or rests on a few.
+with the printed average marked.
 }
 \examples{
 sim <- simulate_capital_allocation(80, 6, 6, seed = 1)
