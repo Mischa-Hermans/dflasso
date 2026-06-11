@@ -217,7 +217,7 @@ fit_supplied_regret <- function(inputs, sense, penalty, control, call) {
     )
   }
   regret <- validate_supplied_regret(inputs$regret, inputs$scenario, sense)
-  note_supplied_regret(sense)
+  note_supplied_regret()
 
   seed <- resolve_seed(control$seed)
   modelling <- modelling_rows(inputs, control)
@@ -946,28 +946,13 @@ score_supplied_regret <- function(inputs, regret) {
   as.numeric(column_correlation_abs(scenario_features, regret))
 }
 
-note_supplied_regret <- function(sense) {
+note_supplied_regret <- function() {
   if (isTRUE(getOption("dflasso.quiet"))) {
     return(invisible(NULL))
   }
-  if (!isTRUE(getOption("dflasso.supplied_regret_full_shown"))) {
-    message(
-      "Using the supplied regret as-is. These scores are valid only if ",
-      "regret is OUT-OF-SAMPLE regret from the model being DIAGNOSED, ",
-      "never dflasso's own fit, never in-sample, and a min-sense regret >= ",
-      "0. In-sample or wrong-model regret gives confident, meaningless ",
-      "scores; dflasso cannot detect this."
-    )
-    options(dflasso.supplied_regret_full_shown = TRUE)
-  } else {
-    message(sprintf(
-      paste0(
-        "Note: scores assume regret is OUT-OF-SAMPLE from the model being ",
-        "diagnosed (%s sense); dflasso cannot check this."
-      ),
-      sense
-    ))
-  }
+  message(
+    "Using the supplied regret as-is, not regret from a dflasso fit."
+  )
   invisible(NULL)
 }
 
