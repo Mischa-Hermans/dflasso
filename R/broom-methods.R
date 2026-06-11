@@ -85,6 +85,9 @@ glance.DecisionFocusedLasso <- function(x, ...) {
 #'   auto-builds it from `scenario_new`.
 #' @param element_id_new Optional per-row element ids, `NULL` uses per-scenario
 #'   row positions.
+#' @param newdata Optional data frame to attach the decision columns to, joined
+#'   on `(scenario, element_id)`. `NULL` attaches them to a fresh element-row
+#'   tibble.
 #' @export
 augment.DecisionFocusedLasso <- function(x, x_new, scenario_new,
                                          instances_new = NULL,

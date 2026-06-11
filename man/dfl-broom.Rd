@@ -39,6 +39,10 @@ auto-builds it from \code{scenario_new}.}
 
 \item{element_id_new}{Optional per-row element ids, \code{NULL} uses per-scenario
 row positions.}
+
+\item{newdata}{Optional data frame to attach the decision columns to, joined
+on \verb{(scenario, element_id)}. \code{NULL} attaches them to a fresh element-row
+tibble.}
 }
 \value{
 \code{tidy()} returns a tibble with one row per feature and columns
