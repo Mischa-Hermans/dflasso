@@ -77,7 +77,10 @@ dim(prepared$x)
 \code{\link[=make_instances]{make_instances()}}, \code{\link[=dfl_fit]{dfl_fit()}}
 
 Other dflasso data helpers: 
+\code{\link{aid_routing}},
+\code{\link{capital_allocation_demo}},
 \code{\link{make_instances}()},
+\code{\link{prepare_instances}()},
 \code{\link{simulate_capital_allocation}()},
 \code{\link{simulate_knapsack}()},
 \code{\link{simulate_shortest_path}()}
