@@ -8,3 +8,7 @@ planning
 .vscode
 .idea
 **/.DS_Store
+src/*.o
+src/*.so
+src/*.dll
+src/*.dll.a
