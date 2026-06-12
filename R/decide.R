@@ -88,6 +88,7 @@ setMethod(
         nrow(matrix_x), length(scenario)
       ), "dflasso_error_dimension")
     }
+    guard_scenario_not_cost(scenario_new, "scenario_new")
     element_id <- resolve_element_id(
       element_id_new, scenario_new, nrow(matrix_x)
     )
@@ -112,6 +113,18 @@ setMethod(
     )
   }
 )
+
+guard_scenario_not_cost <- function(scenario, arg_name) {
+  if (is.numeric(scenario) && length(scenario) > 1L &&
+        anyDuplicated(scenario) == 0L) {
+    decide_error(sprintf(paste0(
+      "%s has a different value in every row, so it does not group the rows ",
+      "into instances. A cost vector passed where the scenario id belongs ",
+      "looks like this; pass the ids that group the rows into instances."
+    ), arg_name), "dflasso_error_usage")
+  }
+  invisible(NULL)
+}
 
 resolve_decide_problem <- function(object, problem) {
   has_solver <- !is.null(object@problem)

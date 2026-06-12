@@ -77,6 +77,7 @@ setMethod(
     scenario <- as.character(scenario_test)
     cost <- as.numeric(cost_test)
     check_regret_lengths(matrix_x, scenario, cost)
+    guard_scenario_not_cost(scenario_test, "scenario_test")
 
     ids <- as.character(unique(scenario))
     instances <- resolve_instances(instances_test, scenario_test, problem)

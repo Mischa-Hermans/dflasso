@@ -94,6 +94,16 @@ cause. \code{feasible(out)} holds only the instances that decided;
 \code{names(which(!is_feasible(out)))} lists the failing ids.
 }
 
+\section{decide() or regret() rejects the scenario as a cost vector}{
+
+The error reads \code{scenario_new} (or \code{scenario_test}) "has a different value in
+every row". Passed positionally, a cost vector is easy to put where the
+scenario id belongs, and a cost has a distinct value per row, so it groups
+nothing into instances. Pass the grouping ids, the same \code{scenario} given to
+\code{\link[=dfl_fit]{dfl_fit()}}. The fit path catches this through its modelling-set check; at
+\code{\link[=decide]{decide()}} and \code{\link[=regret]{regret()}} the guard reports it directly.
+}
+
 \section{The route comes back as row numbers instead of arc ids}{
 
 \code{element_sequence} and \code{selected_elements} show "1" "2" "3". No \code{element_id}

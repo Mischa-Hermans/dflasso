@@ -78,6 +78,14 @@
 #' cause. `feasible(out)` holds only the instances that decided;
 #' `names(which(!is_feasible(out)))` lists the failing ids.
 #'
+#' @section decide() or regret() rejects the scenario as a cost vector:
+#' The error reads `scenario_new` (or `scenario_test`) "has a different value in
+#' every row". Passed positionally, a cost vector is easy to put where the
+#' scenario id belongs, and a cost has a distinct value per row, so it groups
+#' nothing into instances. Pass the grouping ids, the same `scenario` given to
+#' [dfl_fit()]. The fit path catches this through its modelling-set check; at
+#' [decide()] and [regret()] the guard reports it directly.
+#'
 #' @section The route comes back as row numbers instead of arc ids:
 #' `element_sequence` and `selected_elements` show "1" "2" "3". No `element_id`
 #' was supplied, so ids defaulted to per-scenario row positions. Supply labels:
