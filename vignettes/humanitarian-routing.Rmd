@@ -1,0 +1,168 @@
+---
+title: "Humanitarian routing with dflasso"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Humanitarian routing with dflasso}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE,
+                      fig.width = 7, fig.height = 4.5)
+library(dflasso)
+```
+
+An aid convoy is routed before the day's travel times are known, so they are
+estimated from features and the fastest-looking path is taken. A paved
+arterial's time is easy to predict and rarely decides the route. Flood depth on
+a low crossing is hard to predict, yet it flips the route the day the crossing
+floods. A model tuned only for prediction spends its few feature slots on the
+arterial and drops the flood depth, then sends a truck into the washout.
+
+dflasso keeps the features that move the route, weak predictors included, and
+refits. This vignette walks the whole loop on the `aid_routing` data: build the
+rows, fit, decide tomorrow's route, and check on held-out days whether the
+decision focus lowered regret against an ordinary prediction-focused model.
+
+`aid_routing` is the package's demo dataset, and it is simulated: `flood_depth`
+and `mud_depth` predict travel time poorly yet decide the route on wet days. So
+read the method here, and take the magnitudes as illustrative. On other data the
+regret check is how to tell.
+
+## The problem, set up once
+
+`shortest_path_problem()` is a built-in. It fixes the sense to "min" and solves
+with Dijkstra, so no solver function is needed.
+
+```{r problem}
+routing <- shortest_path_problem()
+```
+
+## From graph tables to model rows
+
+`aid_routing` is not a flat table. It is a list of graph objects: the arcs and
+their per-arc features, the nodes, a day panel with each day's closures, and the
+observed travel times. `prepare_instances()` joins them into the rows
+`dfl_fit()`, `decide()` and `regret()` take, one row per open arc per day, and hands
+back a coverage report. Each row is one element (here, one arc on one day), and the
+scenario column groups a day's rows into an instance, the routing problem to
+solve. See `?dflasso-glossary`. The `which` argument selects a slice of the
+demo's day panel; on other data the rows are chosen directly.
+
+```{r prepare}
+train <- prepare_instances(aid_routing, which = "training")
+dim(train$x)
+head(train$coverage)
+```
+
+Read the report. Only the driven path is observed, so most (date, arc) pairs
+never get a time and many days are set aside for scoring. Every observed time
+trains the cost model; a day counts for scoring only when every arc the router
+might use has an observed time, so most days are set aside by design. These few rows are clean, but across the full panel only about 45% of days
+clear the bar for scoring; that fraction is normal when only the driven path is
+observed. The observed-time count and the missing count both print, so a
+mis-join cannot hide.
+
+## Fit it
+
+One call with sensible defaults. With the seed named, re-runs reproduce the same
+features and decisions. The fit here lowers `n_splits` from the default of 15 to
+10 and runs sequentially so it knits fast; on a real graph leave the default and
+add `workers = 8` for parallel proxy splits. The
+`element_id` argument is the per-arc label that ties model rows back to graph
+arcs; `prepare_instances()` builds it, and the `_new` and `_test` forms are the
+same label for `decide()` and `regret()` data. `instances` carries each day's graph for the solver: its open arcs (closed ones
+already removed), the node count, and that day's origin and destination;
+`prepare_instances()` builds it here.
+
+```{r fit}
+model <- dfl_fit(train$x, train$cost, train$scenario,
+                 problem = routing,
+                 instances = train$instances,
+                 element_id = train$element_id,
+                 control = dfl_control(seed = 2026, n_splits = 10L))
+model
+```
+
+`summary()` is the one-screen report: how many features were kept, which weak
+but decisive ones the method rescued, and the reproducibility fields. The
+planted `flood_depth` and `mud_depth` are rescued, as intended.
+
+```{r summary}
+summary(model)
+```
+
+The proxy scores are correlational (see `?dflasso-validation`): read
+`proxy_score` as the reliable signal and the rescue label as a rough summary.
+With collinearity, and aggregation down to one number per scenario, a noise
+column can clear the floor on another seed. The held-out `regret()` below
+is the real arbiter.
+
+## Tomorrow's route
+
+`decide()` needs features only, never costs, so tomorrow's route always
+computes. Out comes an ordered arc list a driver reads.
+
+```{r decide}
+tomorrow <- prepare_instances(aid_routing, which = "tomorrow")
+routes <- decide(model, tomorrow$x, tomorrow$scenario,
+                 tomorrow$instances,
+                 element_id_new = tomorrow$element_id)
+element_sequence(routes)[["2026-08-12"]]
+```
+
+One planted day, `2026-08-14`, closes a cut-set that severs every path from
+origin to destination. dflasso marks it infeasible with a clear reason rather
+than crashing, and every other day still routes.
+
+```{r infeasible}
+infeasible_reasons(routes)
+```
+
+## Does the decision focus lower regret?
+
+This is the held-out check. Score realised regret on held-out days, which the
+model never saw, against the prediction-focused baseline, the adaptive lasso
+named by `baseline = "adaptive"`. Lower regret is better.
+
+```{r regret}
+test <- prepare_instances(aid_routing, which = "holdout")
+result <- regret(model, test$x, test$cost, test$scenario,
+                 test$instances, element_id_test = test$element_id,
+                 baseline = "adaptive")
+result
+```
+
+On this data the decision focus roughly halves the held-out regret. The exact
+figure shifts a little between computers and software versions, so read it in
+rounded terms. It is not guaranteed: on another graph the focus can lose, and
+dflasso reports that the same way, with the verdict reading "RAISED regret".
+Because this held-out set is itself simulated, run `regret()` on real days
+before the field.
+
+## Does it hold across days, or only on average?
+
+The mean can hide a few disastrous days. The paired spread plots per-day regret (one day is one instance here) for both
+models, the printed average marked with a diamond.
+
+```{r spread, fig.alt = "Per-instance regret for both models on held-out days; lower is better; each model's average marked by a diamond; the decision-focused model sits lower."}
+plot(result)
+```
+
+## Where next
+
+For the feature list alone, read `selected_features(model)` and skip `decide()`.
+For a different problem (knapsack, allocation, assignment, an LP, or a custom
+solver), copy a template from `?optimization_problem`; the fit, decide and
+regret calls stay the same; what changes is `problem =` and the rows fed in. To
+run on other data, supply what `prepare_instances()` produced for the demo: a
+feature matrix `x`, the observed `cost`, a `scenario` grouping key, an
+`element_id` label, and for a graph the per-instance `instances`; pair these
+with a `problem =` from the constructors above. `make_instances()` builds those `instances` objects on other data, and
+`?dfl_data` covers the
+flat-table path.
+
+```{r selected}
+selected_features(model)
+```
