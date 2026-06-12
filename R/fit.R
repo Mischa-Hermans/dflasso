@@ -157,6 +157,7 @@ fit_solver <- function(inputs, problem, instances, penalty, control, call) {
 
   seed <- resolve_seed(control$seed)
   modelling <- modelling_rows(inputs, control)
+  control <- guard_modelling_size(modelling, control)
 
   probe_solver(problem, instances, inputs)
   coverage <- compute_proxy_coverage(problem, instances, inputs, control)
@@ -221,6 +222,7 @@ fit_supplied_regret <- function(inputs, sense, penalty, control, call) {
 
   seed <- resolve_seed(control$seed)
   modelling <- modelling_rows(inputs, control)
+  control <- guard_modelling_size(modelling, control)
 
   foldid <- make_foldid(modelling$scenario, control$nfolds, seed)
   adaptive_weight <- compute_adaptive_weights(modelling, foldid, control)
@@ -622,6 +624,26 @@ modelling_rows <- function(inputs, control) {
     cost = if (is.null(inputs$cost)) NULL else inputs$cost[keep],
     scenario = inputs$scenario[keep]
   )
+}
+
+guard_modelling_size <- function(modelling, control) {
+  n_scenarios <- length(unique(modelling$scenario))
+  if (n_scenarios < 3L) {
+    fit_error(sprintf(paste0(
+      "only %d scenario(s) have an observed cost and at least ",
+      "min_elements_per_scenario (%d) elements, too few to cross-validate; at ",
+      "least 3 are needed. Lower min_elements_per_scenario, or add scenarios ",
+      "with an observed cost."
+    ), n_scenarios, control$min_elements_per_scenario), "dflasso_error_usage")
+  }
+  if (n_scenarios < control$nfolds) {
+    fit_warning(sprintf(
+      "%d scenarios is fewer than nfolds (%d); reduced to %d folds.",
+      n_scenarios, control$nfolds, n_scenarios
+    ))
+    control$nfolds <- n_scenarios
+  }
+  control
 }
 
 make_foldid <- function(scenario, nfolds, seed) {
