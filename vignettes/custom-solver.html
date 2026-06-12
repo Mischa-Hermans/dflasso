@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>A custom solver with dflasso</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">A custom solver with dflasso</h1>
+
+
+
+<p>A maintenance team can service three of its eight machines each week.
+It picks the three with the lowest repair cost, but the cost is only
+known after the work, so it is predicted from features beforehand. Some
+features predict a machine’s cost well; others barely predict it yet
+still decide which three are cheapest that week. dflasso keeps the
+second kind.</p>
+<p>No built-in problem fits “pick the cheapest three”, so this vignette
+wraps one as a custom solver and runs the whole workflow on it: fit the
+model, decide a new week’s machines, and check held-out regret against
+an ordinary prediction-focused model.</p>
+<div id="the-decision-as-a-custom-solver" class="section level2">
+<h2>The decision, as a custom solver</h2>
+<p><code>optimization_problem()</code> wraps any solver. This one takes
+the predicted costs for a week’s machines and returns a 0/1 vector
+marking the three to service. The objective is
+<code>sense = &quot;min&quot;</code>, since lower cost is better, and the count
+<code>k</code> arrives in <code>instance</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>cheapest_k <span class="ot">&lt;-</span> <span class="fu">optimization_problem</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="at">sense =</span> <span class="st">&quot;min&quot;</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">solve =</span> <span class="cf">function</span>(costs, instance) {</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>    chosen <span class="ot">&lt;-</span> <span class="fu">order</span>(costs)[<span class="fu">seq_len</span>(instance<span class="sc">$</span>k)]</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>    decision <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">length</span>(costs))</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>    decision[chosen] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>    decision</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>  },</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;cheapest-k&quot;</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>)</span></code></pre></div>
+<p>The returned vector is the same length and order as
+<code>costs</code>. A larger problem would call a solver such as lpSolve
+or igraph here instead; <code>?dflasso-solvers</code> has worked
+examples.</p>
+</div>
+<div id="the-data" class="section level2">
+<h2>The data</h2>
+<p>Simulated repair records, one row per machine per week. Two
+week-level features (load, temperature) set the week’s cost level. Three
+per-machine features rank the machines within a week:
+<code>feat_mileage</code> predicts cost well, while
+<code>feat_fault</code> and <code>feat_wear</code> are weak predictors
+that still shift which three are cheapest. <code>feat_noise</code> is
+unrelated.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>simulate_repair <span class="ot">&lt;-</span> <span class="cf">function</span>(n_weeks, seed) {</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(seed)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  n_machines <span class="ot">&lt;-</span> 8L</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  rows <span class="ot">&lt;-</span> n_weeks <span class="sc">*</span> n_machines</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  feat_week_load <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">rnorm</span>(n_weeks), <span class="at">each =</span> n_machines)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  feat_week_temp <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">rnorm</span>(n_weeks), <span class="at">each =</span> n_machines)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  feat_mileage <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(rows)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  feat_fault <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(rows)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  feat_wear <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(rows)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  feat_noise <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(rows)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  repair_cost <span class="ot">&lt;-</span> <span class="dv">5</span> <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span> feat_week_load <span class="sc">+</span> <span class="dv">2</span> <span class="sc">*</span> feat_week_temp <span class="sc">+</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>    <span class="fl">1.5</span> <span class="sc">*</span> feat_mileage <span class="sc">+</span> <span class="fl">0.2</span> <span class="sc">*</span> feat_fault <span class="sc">+</span> <span class="fl">0.2</span> <span class="sc">*</span> feat_wear <span class="sc">+</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>    <span class="fu">rnorm</span>(rows, <span class="at">sd =</span> <span class="fl">0.25</span>)</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>    <span class="at">week =</span> <span class="fu">rep</span>(<span class="fu">sprintf</span>(<span class="st">&quot;week_%02d&quot;</span>, <span class="fu">seq_len</span>(n_weeks)), <span class="at">each =</span> n_machines),</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>    <span class="at">machine =</span> <span class="fu">rep</span>(<span class="fu">sprintf</span>(<span class="st">&quot;machine_%d&quot;</span>, <span class="fu">seq_len</span>(n_machines)), <span class="at">times =</span> n_weeks),</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>    feat_week_load, feat_week_temp, feat_mileage,</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>    feat_fault, feat_wear, feat_noise, repair_cost,</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>    <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>  )</span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>}</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>train <span class="ot">&lt;-</span> <span class="fu">simulate_repair</span>(<span class="dv">80</span>, <span class="at">seed =</span> <span class="dv">1</span>)</span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>test  <span class="ot">&lt;-</span> <span class="fu">simulate_repair</span>(<span class="dv">40</span>, <span class="at">seed =</span> <span class="dv">2</span>)</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="fu">head</span>(train[, <span class="fu">c</span>(<span class="st">&quot;week&quot;</span>, <span class="st">&quot;machine&quot;</span>, <span class="st">&quot;feat_mileage&quot;</span>, <span class="st">&quot;feat_fault&quot;</span>, <span class="st">&quot;repair_cost&quot;</span>)])</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt;      week   machine feat_mileage  feat_fault repair_cost</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt; 1 week_01 machine_1    0.4251004 -1.08690882    3.120234</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt; 2 week_01 machine_2   -0.2386471 -1.82608301    1.451561</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt; 3 week_01 machine_3    1.0584830  0.99528181    4.683407</span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt; 4 week_01 machine_4    0.8864227 -0.01186178    4.025181</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt; 5 week_01 machine_5   -0.6192430 -0.59962839    1.350710</span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&gt; 6 week_01 machine_6    2.2061025 -0.17794799    4.928581</span></span></code></pre></div>
+<p><code>dfl_data()</code> slices the feature matrix, the cost, the week
+(the scenario that groups a week’s machines into one instance), and the
+machine id.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>train_data <span class="ot">&lt;-</span> <span class="fu">dfl_data</span>(train, <span class="at">features =</span> <span class="fu">starts_with</span>(<span class="st">&quot;feat_&quot;</span>),</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>                       <span class="at">cost =</span> repair_cost, <span class="at">scenario =</span> week,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                       <span class="at">element_id =</span> machine)</span></code></pre></div>
+</div>
+<div id="fit" class="section level2">
+<h2>Fit</h2>
+<p><code>make_instances()</code> attaches <code>k = 3</code> to every
+week, so the solver knows how many machines to service.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">dfl_fit</span>(train_data<span class="sc">$</span>x, train_data<span class="sc">$</span>cost, train_data<span class="sc">$</span>scenario,</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>               <span class="at">problem =</span> cheapest_k,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>               <span class="at">instances =</span> <span class="fu">make_instances</span>(train_data<span class="sc">$</span>scenario, <span class="at">k =</span> 3L),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>               <span class="at">element_id =</span> train_data<span class="sc">$</span>element_id,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>               <span class="at">control =</span> <span class="fu">dfl_control</span>(<span class="at">seed =</span> <span class="dv">1</span>, <span class="at">n_splits =</span> 10L))</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="fu">summary</span>(fit)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; Summary of a decision-focused cost model (dflasso)</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; Objective: minimise cost over 80 instances scored, 6 features.</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; FEATURES KEPT</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;   5 of 6 features were kept for the decision.</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;   2 of these are decision-driven rescues, weak at predicting cost on their own, but</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt;   they move the decision, so the model kept them:</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;       feat_fault, feat_wear</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt;   See tidy(fit) for every feature, its coefficient, and its role.</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; WHAT EACH FEATURE IS FOR  (across all features, by how they behave)</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt;   decision-relevant   2    were kept for the decision (rescued by the decision step)</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt;   prediction-relevant 3    were kept by the accuracy step (the usual reason)</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt;   both                0    do both</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt;   neither             1    not used by either model</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt;   These roles come from one random reshuffle of the instances, so they can</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt;   shift a little under a different seed. Judge a feature by its score in</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt;   tidy(fit), not by the bare label.</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; DOES THE DECISION FOCUS PAY OFF?  (lower regret is better)</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt;   Regret = how much worse a decision was than the best possible in</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt;   hindsight, averaged over instances.</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt;   This needs held-out data. Run regret(fit, x_test, cost_test,</span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt;   scenario_test) to compare against the prediction-focused model.</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt;   See ?dflasso-validation.</span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt; HOW HARD FEATURES WERE FILTERED</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt;   Filtering strength 0.006, chosen automatically by trying many settings and</span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt;   keeping the best; smaller keeps more features. (this setting is called</span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt;   lambda)</span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt; REPRODUCIBILITY</span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt;   Fit with seed 1; re-running with this seed gives bit-identical features,</span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt;   scores, and decisions. Pass seed = &lt;int&gt; to fix it up front and quote</span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt;   that number.</span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt;   Decision quality was averaged over 10 random reshuffles of the instances.</span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt; SETTINGS</span></span>
+<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt;   main  : features put on a common scale, 10-fold cross-validation, instances must have &gt;= 2 elements.</span></span>
+<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a><span class="co">#&gt;   method: n_splits = 10 (rest at defaults).</span></span></code></pre></div>
+<p><code>feat_fault</code> and <code>feat_wear</code> are the rescues:
+weak predictors the decision step kept because they move which machines
+are cheapest. <code>feat_mileage</code> and the week-level features are
+kept the usual way, and <code>feat_noise</code> is dropped.</p>
+</div>
+<div id="decide-a-new-weeks-machines" class="section level2">
+<h2>Decide a new week’s machines</h2>
+<p><code>decide()</code> reads features only, never costs, so the choice
+computes before any repair cost is known. The test weeks stand in for
+new weeks here.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>test_data <span class="ot">&lt;-</span> <span class="fu">dfl_data</span>(test, <span class="at">features =</span> <span class="fu">starts_with</span>(<span class="st">&quot;feat_&quot;</span>),</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                      <span class="at">cost =</span> repair_cost, <span class="at">scenario =</span> week,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>                      <span class="at">element_id =</span> machine)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>picks <span class="ot">&lt;-</span> <span class="fu">decide</span>(fit, test_data<span class="sc">$</span>x, test_data<span class="sc">$</span>scenario,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>                <span class="at">instances_new =</span> <span class="fu">make_instances</span>(test_data<span class="sc">$</span>scenario, <span class="at">k =</span> 3L),</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>                <span class="at">element_id_new =</span> test_data<span class="sc">$</span>element_id)</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="fu">decisions</span>(picks)[[<span class="st">&quot;week_01&quot;</span>]]</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; machine_1 machine_2 machine_3 machine_4 machine_5 machine_6 machine_7 machine_8 </span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt;         0         1         0         1         1         0         0         0</span></span></code></pre></div>
+<p>The three 1s are the machines chosen for that week.</p>
+</div>
+<div id="did-the-decision-focus-help" class="section level2">
+<h2>Did the decision focus help?</h2>
+<p><code>regret()</code> scores both models on the held-out test weeks:
+how much more the chosen three cost than the cheapest three under the
+true costs, lower is better.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>score <span class="ot">&lt;-</span> <span class="fu">regret</span>(fit, test_data<span class="sc">$</span>x, test_data<span class="sc">$</span>cost, test_data<span class="sc">$</span>scenario,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                <span class="at">instances_test =</span> <span class="fu">make_instances</span>(test_data<span class="sc">$</span>scenario, <span class="at">k =</span> 3L),</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                <span class="at">element_id_test =</span> test_data<span class="sc">$</span>element_id)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>score</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; Decision quality vs the prediction-focused approach (dflasso regret)</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;   Lower regret is better. Regret = how much worse a decision was than the</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt;   best possible in hindsight, averaged over instances.</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;   Decision-focused model : 0.05 average regret</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;   Prediction-focused model: 0.12 average regret</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;   The decision focus cut regret by 53.1% on this held-out data.</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;   Measured on 40 of 40 instances (100%); 0 set aside for missing costs, 0 had no feasible decision. Both approaches were compared on the same instances.</span></span></code></pre></div>
+<p>On this simulated data the decision focus roughly halves the held-out
+regret. It keeps <code>feat_fault</code> and <code>feat_wear</code>, the
+two weak predictors the prediction-focused model drops. The size is
+illustrative; on other data the focus may help less, or not at all, and
+the held-out <code>regret()</code> is how to tell.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">plot</span>(score)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" alt="Per-week regret for the decision-focused and prediction-focused models on held-out weeks; lower is better; each model&#39;s average is marked and the decision-focused one sits lower." /></p>
+</div>
+<div id="where-next" class="section level2">
+<h2>Where next</h2>
+<p>For a different problem, swap the solver inside
+<code>optimization_problem()</code>; the fit, decide and regret calls
+stay the same. <code>?dflasso-solvers</code> has worked solvers for
+assignment, transportation and spanning trees, and
+<code>?dfl_data</code> covers the data shape.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

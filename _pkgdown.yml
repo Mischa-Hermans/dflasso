@@ -23,6 +23,8 @@ navbar:
       menu:
       - text: Humanitarian routing
         href: articles/humanitarian-routing.html
+      - text: A custom solver
+        href: articles/custom-solver.html
     concepts:
       text: Concepts
       menu:
