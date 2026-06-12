@@ -34,13 +34,27 @@
 #' @include fitted-class.R summary-print.R
 NULL
 
-okabe_ito <- c(
-  "decision-relevant" = "#E69F00",
-  "prediction-relevant" = "#0072B2",
-  "both" = "#009E73",
-  "neither" = "#999999",
-  "decision-focused" = "#E69F00",
-  "prediction-focused" = "#56B4E9"
+dfl_palette <- c(
+  "decision-relevant" = "#1f3a5f",
+  "prediction-relevant" = "#7a7a7a",
+  "both" = "#13263d",
+  "neither" = "#c0c0c0",
+  "decision-focused" = "#1f3a5f",
+  "prediction-focused" = "#9e9e9e"
+)
+
+role_shape <- c(
+  "decision-relevant" = 19,
+  "prediction-relevant" = 17,
+  "both" = 15,
+  "neither" = 1
+)
+
+role_linetype <- c(
+  "decision-relevant" = "solid",
+  "prediction-relevant" = "longdash",
+  "both" = "dotted",
+  "neither" = "solid"
 )
 
 role_labels <- c(
@@ -97,12 +111,16 @@ plot_roles <- function(object) {
   plot_object <- ggplot2::ggplot(
     data,
     ggplot2::aes(x = .data$prediction_relevance, y = .data$proxy_score,
-                 colour = .data$role)
+                 colour = .data$role, shape = .data$role)
   ) +
-    ggplot2::geom_point(data = backdrop, alpha = 0.6, size = 2) +
-    ggplot2::geom_point(data = rescued, size = 3.2) +
+    ggplot2::geom_point(data = backdrop, size = 2.4) +
+    ggplot2::geom_point(data = rescued, size = 3.4) +
     ggplot2::scale_colour_manual(
-      values = okabe_ito[names(role_labels)], labels = role_labels[present_roles],
+      values = dfl_palette[names(role_labels)], labels = role_labels[present_roles],
+      breaks = present_roles, drop = FALSE, name = "Feature role"
+    ) +
+    ggplot2::scale_shape_manual(
+      values = role_shape[names(role_labels)], labels = role_labels[present_roles],
       breaks = present_roles, drop = FALSE, name = "Feature role"
     ) +
     ggplot2::labs(
@@ -111,14 +129,11 @@ plot_roles <- function(object) {
         "Top-left = rescued: weak at predicting cost, but they change the ",
         "decision."
       ),
-      x = "How well it predicts cost",
-      y = "How much it changes the decision",
-      caption = paste0(
-        "Position shows association; it is not proof of cause. ",
-        "See tidy(fit) for the score behind each point."
-      )
+      x = "Predicts cost  (lasso predictive strength, 0-1)",
+      y = "Changes the decision  (correlation with regret, 0-1)"
     ) +
-    dfl_theme()
+    dfl_theme() +
+    ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.08))
   add_feature_labels(plot_object, rescued, "prediction_relevance",
                      "proxy_score")
 }
@@ -132,46 +147,32 @@ plot_penalty <- function(object) {
   plot_object <- ggplot2::ggplot(data, ggplot2::aes(y = .data$term)) +
     ggplot2::geom_segment(
       ggplot2::aes(x = .data$adaptive_weight, xend = .data$penalty_factor,
-                   yend = .data$term, colour = .data$easing),
-      linewidth = 1.2
+                   yend = .data$term),
+      colour = "#555555", linewidth = 1
     ) +
     ggplot2::geom_point(ggplot2::aes(x = .data$adaptive_weight),
                         shape = 21, fill = "white", colour = "#555555",
                         size = 2.6) +
-    ggplot2::geom_point(ggplot2::aes(x = .data$penalty_factor),
-                        colour = okabe_ito[["decision-relevant"]], size = 2.8) +
-    ggplot2::scale_x_log10() +
-    ggplot2::scale_colour_gradient(
-      low = "#F6D08A", high = "#9A6A00", name = "How much easier"
+    ggplot2::geom_point(ggplot2::aes(x = .data$penalty_factor,
+                                     colour = .data$kept), size = 2.8) +
+    ggplot2::scale_x_log10(expand = ggplot2::expansion(mult = c(0.09, 0.13))) +
+    ggplot2::scale_colour_manual(
+      values = c("Kept by the refit" = dfl_palette[["decision-relevant"]],
+                 "Eased, not kept" = "#9e9e9e"),
+      drop = FALSE, name = NULL
     ) +
     ggplot2::labs(
-      title = "Which features the decision focus made easier to keep",
+      title = "How the decision focus lowers a feature's lasso penalty",
       subtitle = paste0(
-        "Each line: from the usual filtering strength (open dot) to the eased, ",
-        "decision-focused\none (filled dot). Leftward = easier to keep (only ",
-        "the features that changed are shown)."
+        "Each line runs from the usual lasso penalty (open dot) to the eased, ",
+        "decision-focused\npenalty (filled dot). Leftward = a lower penalty; the ",
+        "refit then keeps some, not all."
       ),
-      x = "How hard this feature was filtered out  (lower = kept more easily)",
-      y = NULL,
-      caption = penalty_caption(data)
+      x = "Lasso penalty on this feature  (log scale; lower = kept more easily)",
+      y = NULL
     ) +
     dfl_theme()
   plot_object
-}
-
-penalty_caption <- function(data) {
-  base <- sprintf(paste0(
-    "Only the %d features the decision focus changed are shown; the rest were ",
-    "penalised the\nsame as usual. See tidy(fit) for every feature."),
-    nrow(data))
-  if (any(data$clipped)) {
-    return(paste0(
-      base,
-      "\nA few open dots are clipped to the largest filtering strength the fit ",
-      "applies, to keep the rest legible."
-    ))
-  }
-  base
 }
 
 plot_path <- function(object) {
@@ -188,33 +189,35 @@ plot_path <- function(object) {
   ) +
     ggplot2::geom_line(
       data = data[data$role == "neither", , drop = FALSE],
-      colour = okabe_ito[["neither"]], alpha = 0.5
+      colour = dfl_palette[["neither"]], linewidth = 0.5
     ) +
     ggplot2::geom_line(
       data = highlighted,
-      ggplot2::aes(colour = .data$role), linewidth = 1
+      ggplot2::aes(colour = .data$role, linetype = .data$role), linewidth = 1
     ) +
     ggplot2::geom_vline(xintercept = chosen, linetype = "dashed",
-                        colour = "#555555") +
+                        colour = "#333333", linewidth = 0.6) +
     ggplot2::annotate("text", x = chosen, y = -Inf, label = "chosen model",
-                      hjust = 1.05, vjust = -0.8, size = 3, colour = "#555555") +
+                      hjust = 1.05, vjust = -0.8, size = 3.3, colour = "#333333",
+                      fontface = "italic") +
     ggplot2::scale_colour_manual(
-      values = okabe_ito[names(role_labels)], labels = role_labels,
+      values = dfl_palette[names(role_labels)], labels = role_labels,
+      breaks = names(role_labels), drop = FALSE, name = "Feature role"
+    ) +
+    ggplot2::scale_linetype_manual(
+      values = role_linetype[names(role_labels)], labels = role_labels,
       breaks = names(role_labels), drop = FALSE, name = "Feature role"
     ) +
     ggplot2::scale_x_reverse() +
     ggplot2::labs(
-      title = "How feature effects grow as the model keeps more features",
+      title = "How each feature's effect grows as the lasso penalty relaxes",
       subtitle = paste0(
-        "Each line is one feature; highlighted lines are the ones kept in the ",
-        "chosen model."
+        "Each line is one feature's coefficient. The penalty is strong at the ",
+        "left and relaxes\nrightward; features switch on as it eases, and the ",
+        "rescued ones stay small."
       ),
-      x = "Model size (fewer features at left, more at right)",
-      y = "Effect on predicted cost",
-      caption = paste0(
-        "Standard coefficient path for the decision-focused fit. Vertical line ",
-        "marks the chosen model."
-      )
+      x = "Lasso penalty  (strong at left, relaxing to the right)",
+      y = "Coefficient  (effect on predicted cost)"
     ) +
     dfl_theme() +
     ggplot2::theme(axis.text.x = ggplot2::element_blank(),
@@ -258,33 +261,29 @@ autoplot.dfl_regret <- function(object, ...) {
   data <- regret_spread_data(object)
   means <- regret_means(object)
   fill_values <- stats::setNames(
-    okabe_ito[c("decision-focused", "prediction-focused")],
+    dfl_palette[c("decision-focused", "prediction-focused")],
     c("Decision-focused model", "Prediction-focused model")
   )
   ggplot2::ggplot(
     data, ggplot2::aes(x = .data$regret, y = .data$model, fill = .data$model)
   ) +
     ggplot2::geom_vline(xintercept = 0, colour = "#999999") +
-    ggplot2::geom_boxplot(alpha = 0.5, outlier.alpha = 0.4, width = 0.5) +
-    ggplot2::geom_jitter(height = 0.12, alpha = 0.4, size = 1.4,
-                         ggplot2::aes(colour = .data$model)) +
+    ggplot2::geom_boxplot(alpha = 0.7, outlier.alpha = 0.5, width = 0.5,
+                          colour = "#333333") +
+    ggplot2::geom_point(position = ggplot2::position_jitter(height = 0.12,
+                                                            seed = 1L),
+                        alpha = 0.45, size = 1.1, colour = "#333333") +
     ggplot2::geom_point(
       data = means, ggplot2::aes(x = .data$regret, y = .data$model),
       shape = 23, size = 3.6, fill = "white", colour = "#222222",
       inherit.aes = FALSE
     ) +
     ggplot2::scale_fill_manual(values = fill_values, name = "Model") +
-    ggplot2::scale_colour_manual(values = fill_values, name = "Model") +
     ggplot2::labs(
-      title = "How much worse than the best possible, per instance",
-      subtitle = "The diamond is the printed average.",
-      x = "Regret on one instance (0 = best possible; lower is better)",
-      y = NULL,
-      caption = paste0(
-        "Same held-out instances scored by both models. A few high-regret ",
-        "instances can outweigh a\nbetter average; this shows the spread the ",
-        "mean hides."
-      )
+      title = "Per-instance regret on the held-out data",
+      subtitle = "The diamond marks each model's average; lower is better.",
+      x = "Regret on one instance  (0 = best possible)",
+      y = NULL
     ) +
     dfl_theme() +
     ggplot2::theme(legend.position = "none")
@@ -325,23 +324,17 @@ penalty_data <- function(object) {
   eased <- object@penalty_factor < object@adaptive_weight - 1e-8
   adaptive_weight <- object@adaptive_weight[eased]
   penalty_factor <- object@penalty_factor[eased]
-  weight_cap <- penalty_weight_cap(object)
+  roles <- classify_feature_roles(object)
+  kept <- ifelse(roles[eased] != "neither", "Kept by the refit",
+                 "Eased, not kept")
   data.frame(
     term = object@feature_names[eased],
-    adaptive_weight = pmin(adaptive_weight, weight_cap),
+    adaptive_weight = adaptive_weight,
     penalty_factor = penalty_factor,
     easing = (adaptive_weight - penalty_factor) / adaptive_weight,
-    clipped = adaptive_weight > weight_cap,
+    kept = factor(kept, levels = c("Kept by the refit", "Eased, not kept")),
     stringsAsFactors = FALSE
   )
-}
-
-penalty_weight_cap <- function(object) {
-  control <- object@control
-  if (!is.null(control) && is.numeric(control$w_max)) {
-    return(control$w_max)
-  }
-  max(object@penalty_factor)
 }
 
 path_data <- function(object) {
@@ -412,7 +405,9 @@ add_feature_labels <- function(plot_object, label_data, x_name, y_name) {
     return(plot_object +
              ggrepel::geom_text_repel(data = label_data, mapping = mapping,
                                       size = 3, show.legend = FALSE,
-                                      max.overlaps = 20))
+                                      max.overlaps = Inf, box.padding = 0.8,
+                                      point.padding = 0.3, force = 3,
+                                      min.segment.length = 0, seed = 1L))
   }
   plot_object +
     ggplot2::geom_text(data = label_data, mapping = mapping, size = 3,

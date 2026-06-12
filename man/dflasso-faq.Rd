@@ -16,10 +16,9 @@ over the elements: a route's total time, a basket's total value, a
 portfolio's total return. Costs are real numbers on a scale. A sort, a
 knapsack, a shortest path, an assignment, or a linear program is in scope.
 
-Two shapes are out of scope. An objective that is not linear in the predicted
+One shape is out of scope: an objective that is not linear in the predicted
 cost (a variance term, a product of decisions) breaks the regret check, though
-\code{decide()} will still run whatever \code{solve} returns. Pure prediction with no
-downstream decision is a job for \pkg{glmnet}.
+\code{decide()} will still run whatever \code{solve} returns.
 }
 
 \section{Why not target prediction error?}{
@@ -77,10 +76,7 @@ suggests. An
 instance counts toward the decision-quality step only if every element the
 solver could inspect has an observed cost. If fully covered instances drop
 below about 30, dflasso warns that the scores will be noisier and the fit
-still proceeds. The fix is more fully covered instances. Raising \code{n_splits} to
-30 or 50 averages over more resamples but adds no signal. Raising
-\code{min_elements_per_scenario} does not help, because coverage is a separate
-completeness test.
+still proceeds. The fix is more fully covered instances.
 }
 
 \section{Are true costs needed for every element?}{
@@ -100,7 +96,7 @@ Set \verb{dfl_control(seed = <integer>)}. A fixed seed makes a fit reproducible
 across re-runs, and identical whether the run is sequential or parallel. The only random step is
 how instances are resampled to score features. Turn on parallelism with
 \code{dfl_control(workers = parallel::detectCores() - 1)}; it helps when instances
-are many or \code{solve} is slow, and adds only overhead on a small fit. \code{decide()}
+are many or \code{solve} is slow. \code{decide()}
 and \code{predict()} draw no randomness.
 
 To reproduce an earlier fit, feed its seed back with

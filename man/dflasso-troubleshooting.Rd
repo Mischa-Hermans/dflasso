@@ -5,18 +5,18 @@
 \title{Troubleshooting: when something goes wrong}
 \description{
 A symptom, its likely cause, and what to do. Some entries describe dflasso
-working as designed: a reported no-win, a valid but lopsided optimum, a low
+working as designed: a reported no-win, a valid corner solution, a low
 match rate. Each fix points at the function or page that owns it.
 }
 \section{The package will not install}{
 
 \code{install_github} ends in compiler, \code{make}, or \verb{g++} errors rather than a
-dflasso message. dflasso compiles a little C++ on install and no C++ toolchain
+dflasso message. dflasso compiles a little C++ on install and no C++ compiler
 is present. Install a compiler first, then install dflasso. On Windows that is
 Rtools, matched to the R major version, then restart R. On macOS it is the
 Xcode command-line tools, \code{xcode-select --install}. On Linux it is
 build-essential or the Development Tools group. Check with
-\code{pkgbuild::check_build_tools()}. With no local toolchain, use the repository's
+\code{pkgbuild::check_build_tools()}. With no local build tools, use the repository's
 \code{Dockerfile}.
 }
 
@@ -69,16 +69,16 @@ warns rather than stopping; raise the row count or lower \code{nfolds} to silenc
 that.
 }
 
-\section{The fit is very slow or looks hung}{
+\section{The fit is very slow or looks stuck}{
 
-The decision-quality step runs \code{solve} about 5.5 times for every fully
+The decision-quality step runs \code{solve} several times for every fully
 covered instance, so many instances or a slow \code{solve} add up. By default an
 interactive session prints one start line and a \code{Done.} for this step while a
 script stays silent; change it with \code{progress} in \code{\link[=dfl_control]{dfl_control()}}. To speed it
 up, move any cost-independent setup out of \code{solve} and into the \code{instance}
 object (a prebuilt graph, matrix, or index) so each call does the minimum.
 Then set \code{workers = parallel::detectCores() - 1}, which helps when instances
-are many or \code{solve} is slow and adds overhead on a tiny fit. Last, lower
+are many or \code{solve} is slow. Last, lower
 \code{n_splits} if noisier scores are acceptable. Sequential and parallel runs give
 bit-identical results.
 }
@@ -89,7 +89,7 @@ For those instances \code{solve} found no valid decision, for example a destinat
 unreachable after closures. The batch still runs; every feasible instance
 returns its decision. Read \code{infeasible_reasons(out)}, a tibble of \code{scenario}
 and the specific reason, and check that instance's graph, closures, or
-capacity. A cut-set that severs every origin-to-destination path is the usual
+capacity. A cut-set that blocks every origin-to-destination path is the usual
 cause. \code{feasible(out)} holds only the instances that decided;
 \code{names(which(!is_feasible(out)))} lists the failing ids.
 }
@@ -166,7 +166,7 @@ colleague re-fit, which never serialises the closure.
 \section{"solve for scenario '...' returned a vector of length m"}{
 
 \code{solve} returned the wrong number of values, or a non-numeric, \code{NA}, or
-\code{Inf} vector. The eager probe caught it before any model was fit. Return
+\code{Inf} vector. The eager check caught it before any model was fit. Return
 exactly one finite number per element row of that instance, in row order (0/1,
 or a weight). For grids, fix on row-major or column-major and use it both when
 building rows and when flattening the solution, the \code{t()} discipline from
@@ -186,10 +186,10 @@ hand over the saved object to reproduce the routes exactly.
 
 \section{Two mistakes, but only one shows}{
 
-Structural checks run all at once per phase (structure, then the solver probe,
+Structural checks run all at once per phase (structure, then the solver check,
 then coverage), and every check in a phase fires before any model is fit. Read
 the whole list (up to about 8 problems with a \verb{(+k more)} tail) and fix them
-together in one round-trip.
+together in one pass.
 }
 
 \seealso{

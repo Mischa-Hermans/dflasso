@@ -33,7 +33,7 @@ vector (matrix form).}
 regret (matrix form). One value per scenario.}
 
 \item{sense}{Objective sense of the diagnosed model, \code{"min"} (default) or
-\code{"max"}. Recorded and echoed, not used to transform supplied regret.}
+\code{"max"}. Recorded, not used to transform supplied regret.}
 
 \item{control}{A \code{dfl_control} list. Only \code{score_floor} is read here.}
 
@@ -45,7 +45,7 @@ regret (matrix form). One value per scenario.}
 An S3 \code{dfl_score} object: a ranked tibble with columns \code{rank}, \code{term},
 \code{proxy_score}, \code{role} (an ordered factor, \code{decision-relevant} or
 \code{neither}), and \code{reading} (a plain gloss of the score band). Its \code{print()}
-shows the ranking and the heuristic-not-validated footer.
+shows the ranking and the not-validated footer.
 }
 \description{
 When per-instance regret is already available, \code{dfl_score()} ranks features

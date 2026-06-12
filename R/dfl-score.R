@@ -16,13 +16,13 @@
 #' @param regret The realised-regret column (data-frame form) or the self-keyed
 #'   regret (matrix form). One value per scenario.
 #' @param sense Objective sense of the diagnosed model, `"min"` (default) or
-#'   `"max"`. Recorded and echoed, not used to transform supplied regret.
+#'   `"max"`. Recorded, not used to transform supplied regret.
 #' @param control A `dfl_control` list. Only `score_floor` is read here.
 #'
 #' @return An S3 `dfl_score` object: a ranked tibble with columns `rank`, `term`,
 #'   `proxy_score`, `role` (an ordered factor, `decision-relevant` or
 #'   `neither`), and `reading` (a plain gloss of the score band). Its `print()`
-#'   shows the ranking and the heuristic-not-validated footer.
+#'   shows the ranking and the not-validated footer.
 #'
 #' @examples
 #' set.seed(1)
@@ -269,7 +269,7 @@ format_dfl_score <- function(x) {
   footer <- c(
     "  score = |correlation(feature, regret)|, 0-1.",
     paste0(
-      "  Heuristic, not a validated result: with no held-out decisions ",
+      "  Not a validated result: with no held-out decisions ",
       "dflasso can't confirm this ranking."
     ),
     paste0(
@@ -277,7 +277,7 @@ format_dfl_score <- function(x) {
       "diagnosed (>= 0, not in-sample, not dflasso's)."
     ),
     paste0(
-      "  Association with decision failure, not proof of cause. decide() ",
+      "  Association with decision failure. decide() ",
       "needs a solver."
     )
   )
