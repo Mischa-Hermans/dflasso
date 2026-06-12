@@ -3,10 +3,9 @@
 An aid convoy is routed before the day’s travel times are known, so they
 are estimated from features and the fastest-looking path is taken. A
 main road’s time is easy to predict and rarely decides the route. Flood
-depth on a low crossing is hard to predict, yet it flips the route the
-day the crossing floods. A model tuned only for prediction keeps the
-main road and drops the flood depth, then sends a truck onto the flooded
-crossing.
+depth sits near zero on most days, so a model tuned for prediction drops
+it as unimportant; but on the day a crossing floods it decides the
+route, and a model without it sends a truck onto the flooded crossing.
 
 dflasso keeps the features that move the route, weak predictors
 included, and refits. This vignette walks the whole loop on the
@@ -15,7 +14,7 @@ check on held-out days whether the decision focus lowered regret against
 an ordinary prediction-focused model.
 
 `aid_routing` is the package’s demo dataset, and it is simulated:
-`flood_depth` and `mud_depth` predict travel time poorly yet decide the
+`flood_depth` and `mud_depth` are near zero on dry days yet decide the
 route on wet days. So read the method here, and take the magnitudes as
 illustrative. On other data the regret check is how to tell.
 

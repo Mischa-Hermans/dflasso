@@ -8,17 +8,20 @@ features for better decisions, not better predictions.
 In a predict-then-optimise problem the decision is made before the true
 costs are known. Costs are estimated from features, then optimised over.
 Take routing a delivery along the shortest path, where the route is
-chosen before the day’s travel times are known: a feature like flood
-depth can flip which road is fastest while barely changing the overall
-time forecast. The same idea fits any predict-then-optimise problem,
-shortest path, knapsack, allocation or assignment, or a custom solver
-for one of your own.
+chosen before the day’s travel times are known. Flood depth sits near
+zero on most days, so a prediction-focused model drops it as
+unimportant; on the day a crossing floods, though, it decides the route,
+and a model without it routes a truck into the flooded crossing. The
+same idea fits any predict-then-optimise problem, shortest path,
+knapsack, allocation or assignment, or a custom solver for one of your
+own.
 
 The feature that predicts cost best and the feature that changes the
-chosen decision might be different ones, and dflasso keeps the second
-kind. An ordinary lasso ranks features by how well they predict cost.
-dflasso ranks them by how much they change the decision, eases the
-penalty on the ones that move the decision most, and refits. It then
+chosen decision might be different ones. An ordinary lasso keeps the
+strong predictors and tends to drop the ones that change the decision
+but predict cost weakly. dflasso tries to include those variables in the
+model as well, by lowering the penalty on the features that move the
+decision most, so the refit is more likely to select them. It then
 solves the problem on held-out data and compares its regret with a
 prediction-focused model’s. Regret is how much worse a decision turns
 out than the best possible in hindsight; lower is better.
@@ -427,6 +430,8 @@ supplied regret instead of solving for it.
   the pkgdown site.
 - [`vignette("humanitarian-routing", package = "dflasso")`](https://Mischa-Hermans.github.io/dflasso/articles/humanitarian-routing.md):
   the full worked example, on humanitarian routing.
+- [`vignette("custom-solver", package = "dflasso")`](https://Mischa-Hermans.github.io/dflasso/articles/custom-solver.md):
+  a custom solver, from the problem through fit, decide and regret.
 - Help pages: `?dflasso-glossary` for the vocabulary, with
   `?dflasso-faq`, `?dflasso-troubleshooting` and `?dflasso-validation`
   alongside.

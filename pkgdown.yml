@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   custom-solver: custom-solver.html
   humanitarian-routing: humanitarian-routing.html
-last_built: 2026-06-12T15:24Z
+last_built: 2026-06-12T15:59Z
 urls:
   reference: https://Mischa-Hermans.github.io/dflasso/reference
   article: https://Mischa-Hermans.github.io/dflasso/articles

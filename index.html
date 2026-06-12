@@ -73,8 +73,8 @@
 <div class="section level2">
 <h2 id="what-it-does">What it does<a class="anchor" aria-label="anchor" href="#what-it-does"></a>
 </h2>
-<p>In a predict-then-optimise problem the decision is made before the true costs are known. Costs are estimated from features, then optimised over. Take routing a delivery along the shortest path, where the route is chosen before the day’s travel times are known: a feature like flood depth can flip which road is fastest while barely changing the overall time forecast. The same idea fits any predict-then-optimise problem, shortest path, knapsack, allocation or assignment, or a custom solver for one of your own.</p>
-<p>The feature that predicts cost best and the feature that changes the chosen decision might be different ones, and dflasso keeps the second kind. An ordinary lasso ranks features by how well they predict cost. dflasso ranks them by how much they change the decision, eases the penalty on the ones that move the decision most, and refits. It then solves the problem on held-out data and compares its regret with a prediction-focused model’s. Regret is how much worse a decision turns out than the best possible in hindsight; lower is better.</p>
+<p>In a predict-then-optimise problem the decision is made before the true costs are known. Costs are estimated from features, then optimised over. Take routing a delivery along the shortest path, where the route is chosen before the day’s travel times are known. Flood depth sits near zero on most days, so a prediction-focused model drops it as unimportant; on the day a crossing floods, though, it decides the route, and a model without it routes a truck into the flooded crossing. The same idea fits any predict-then-optimise problem, shortest path, knapsack, allocation or assignment, or a custom solver for one of your own.</p>
+<p>The feature that predicts cost best and the feature that changes the chosen decision might be different ones. An ordinary lasso keeps the strong predictors and tends to drop the ones that change the decision but predict cost weakly. dflasso tries to include those variables in the model as well, by lowering the penalty on the features that move the decision most, so the refit is more likely to select them. It then solves the problem on held-out data and compares its regret with a prediction-focused model’s. Regret is how much worse a decision turns out than the best possible in hindsight; lower is better.</p>
 <p>The default plot shows this split directly: every feature placed by how well it predicts cost (horizontal axis) and how much it changes the decision (vertical axis). Features top-left are weak predictors that still change the decision; an ordinary lasso drops these, and dflasso marks the ones it keeps as rescued. Strong predictors that leave the decision unchanged sit bottom-right.</p>
 <p><img src="reference/figures/README-hero-1.png" alt="Features plotted by how well they predict cost (horizontal) and how much they change the decision (vertical); two weak predictors sit at the upper left and are kept, two strong predictors sit at the lower right, and two further features sit at the lower left and are left out." width="100%"></p>
 </div>
@@ -317,6 +317,8 @@
 <a href="https://Mischa-Hermans.github.io/dflasso/">Reference and articles</a>: the pkgdown site.</li>
 <li>
 <code><a href="articles/humanitarian-routing.html">vignette("humanitarian-routing", package = "dflasso")</a></code>: the full worked example, on humanitarian routing.</li>
+<li>
+<code><a href="articles/custom-solver.html">vignette("custom-solver", package = "dflasso")</a></code>: a custom solver, from the problem through fit, decide and regret.</li>
 <li>Help pages: <code>?dflasso-glossary</code> for the vocabulary, with <code>?dflasso-faq</code>, <code>?dflasso-troubleshooting</code> and <code>?dflasso-validation</code> alongside.</li>
 </ul>
 </div>
