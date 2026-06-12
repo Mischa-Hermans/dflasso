@@ -9,6 +9,7 @@
 ^cran-comments\.md$
 ^LICENSE\.md$
 ^Dockerfile$
+^\.dockerignore$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.vscode$

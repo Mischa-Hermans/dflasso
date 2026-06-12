@@ -1,0 +1,10 @@
+.git
+.github
+data-raw
+planning
+**/*.html
+*.Rproj
+.Rproj.user
+.vscode
+.idea
+**/.DS_Store
