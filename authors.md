@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/Mischa-Hermans/dflasso/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/Mischa-Hermans/dflasso/blob/v0.1.0/DESCRIPTION)
 
 Hermans M (2026). *dflasso: Decision-Focused Lasso for
 Predict-Then-Optimize Problems*. R package version 0.1.0,
