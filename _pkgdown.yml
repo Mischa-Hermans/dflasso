@@ -1,0 +1,120 @@
+url: https://Mischa-Hermans.github.io/dflasso/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#2b6777"
+    base_font: {google: "Inter"}
+    heading_font: {google: "Inter"}
+
+navbar:
+  structure:
+    left: [intro, reference, articles, concepts, news]
+    right: [search, github]
+  components:
+    intro:
+      text: Home
+      href: index.html
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Articles
+      menu:
+      - text: Humanitarian routing
+        href: articles/humanitarian-routing.html
+    concepts:
+      text: Concepts
+      menu:
+      - text: Glossary
+        href: reference/dflasso-glossary.html
+      - text: FAQ
+        href: reference/dflasso-faq.html
+      - text: Troubleshooting
+        href: reference/dflasso-troubleshooting.html
+      - text: Validation checklist
+        href: reference/dflasso-validation.html
+    news:
+      text: Changelog
+      href: news/index.html
+    github:
+      icon: fab fa-github
+      href: https://github.com/Mischa-Hermans/dflasso
+      aria-label: GitHub repository
+
+reference:
+- title: Fitting the model
+  desc: Fit the decision-focused cost model and set its options.
+  contents:
+  - dfl_fit
+  - dfl_control
+
+- title: Making and judging decisions
+  desc: Turn a fit into decisions on new data and score how good they were.
+  contents:
+  - decide
+  - regret
+  - predict-coef
+
+- title: Ranking from supplied regret
+  desc: Rank features from out-of-sample decision quality supplied directly.
+  contents:
+  - dfl_score
+  - regret_from_objectives
+
+- title: Optimisation problems and solvers
+  desc: Built-in problems, the custom-solver contract, and the solve calls behind a decision.
+  contents:
+  - optimization_problem
+  - shortest_path_problem
+  - knapsack_problem
+  - capital_allocation_problem
+  - solve_decision
+  - prepare_instances
+
+- title: Preparing data
+  desc: Slice features, costs and scenarios from a data frame.
+  contents:
+  - dfl_data
+  - make_instances
+
+- title: Simulators and demo datasets
+  desc: Paired simulators and the demo data the examples run on.
+  contents:
+  - simulate_shortest_path
+  - simulate_knapsack
+  - simulate_capital_allocation
+  - aid_routing
+  - capital_allocation_demo
+  - dflasso_tuned_thresholds
+
+- title: Inspecting a fit
+  desc: Read what a fit selected, summarise it, plot it, and pull out single quantities.
+  contents:
+  - summary.DecisionFocusedLasso
+  - dfl-broom
+  - plot.DecisionFocusedLasso
+  - dfl-accessors
+  - sense
+
+- title: Working with a decision set
+  desc: Read the decisions, objectives and feasibility that decide() returns.
+  contents:
+  - decision-set-accessors
+  - decision-set-feasibility
+  - as_tibble.DecisionSet
+
+- title: Plotting regret
+  desc: Compare per-instance regret of the two models.
+  contents:
+  - plot.dfl_regret
+
+- title: Concepts and help
+  desc: The package overview, a glossary, the solver gallery, and the pages to read when something looks off.
+  contents:
+  - dflasso-package
+  - dflasso-glossary
+  - dflasso-faq
+  - dflasso-solvers
+  - dflasso-troubleshooting
+  - dflasso-validation
