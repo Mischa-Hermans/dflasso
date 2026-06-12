@@ -24,7 +24,7 @@ test_that("the printed signed percent is honest about direction", {
   rendered <- paste(dflasso:::format_dfl_regret(result), collapse = "\n")
   verb <- if (result$regret <= result$regret_baseline) "cut regret" else "RAISED regret"
   expect_match(rendered, verb, fixed = TRUE)
-  expect_match(rendered, "Both approaches were compared on the very same instances",
+  expect_match(rendered, "Both approaches were compared on the same instances",
                fixed = TRUE)
 })
 
