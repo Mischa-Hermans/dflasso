@@ -30,7 +30,7 @@ retains by lowering its penalty factor. Rescues are named in
 tracks regret, also called the decision-relevance score. It is the
 absolute correlation between the feature (aggregated to instance level) and
 per-instance regret, averaged over resampled splits. As a correlation, it
-records association rather than cause. A higher score lowers that feature's
+measures association. A higher score lowers that feature's
 penalty factor. Read it with \code{\link[=proxy_score]{proxy_score()}} or in the \code{proxy_score} column
 of \code{tidy(fit)}.}
 \item{scenario}{The input column or vector that groups element rows into
@@ -42,7 +42,7 @@ delivery-day's graph with its origin and destination, one knapsack
 realisation, one rebalancing. The rows of instance \code{k} are exactly
 \code{which(scenario == k)}. Instances may have different numbers of rows; only
 the learned coefficient vector is shared across them.}
-\item{element}{One decision atom: a road arc, a knapsack item, an asset, a
+\item{element}{One unit of a decision: a road arc, a knapsack item, an asset, a
 linear-program variable, an assignment cell. It is one row of the feature
 matrix and has one cost, predicted from its own features by a single
 shared coefficient vector.}
@@ -60,9 +60,9 @@ partial coverage. The fit stores \code{n_proxy_eligible} and
 instances so both approaches are compared on identical instances.}
 \item{sense}{The direction of the objective, \code{"min"} or \code{"max"}. A shortest
 path minimises cost; a knapsack or allocation maximises value. Built-in
-problems fix it. On the supplied-regret path, \code{sense} is recorded and
-echoed, and it sets the direction the negative-regret check reads; it does
-not transform regret that is supplied already formed.}
+problems fix it. On the supplied-regret path, \code{sense} is recorded and sets the
+direction the negative-regret check reads; it does not transform regret
+that is supplied already formed.}
 \item{penalty factor}{The per-feature weight the final lasso applies, one
 entry per feature. A larger factor penalises a feature harder, so it is
 dropped sooner; a smaller factor retains it. The decision step lowers the

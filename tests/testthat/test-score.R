@@ -145,12 +145,12 @@ test_that("dfl_score and dfl_fit guard supplied regret the same way", {
   )
 })
 
-test_that("dfl_score prints the ranking and the heuristic footer", {
+test_that("dfl_score prints the ranking and the not-validated footer", {
   scored <- suppressMessages(dfl_score(
     planted_score_frame(),
     features = starts_with("feat_"), scenario = scenario, regret = regret
   ))
   rendered <- paste(dflasso:::format_dfl_score(scored), collapse = "\n")
-  expect_match(rendered, "Heuristic, not a validated result", fixed = TRUE)
+  expect_match(rendered, "Not a validated result", fixed = TRUE)
   expect_match(rendered, "decide() needs a solver", fixed = TRUE)
 })
