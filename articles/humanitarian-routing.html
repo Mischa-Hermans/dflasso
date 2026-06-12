@@ -36,6 +36,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/humanitarian-routing.html">Humanitarian routing</a></li>
+    <li><a class="dropdown-item" href="../articles/custom-solver.html">A custom solver</a></li>
   </ul>
 </li>
 <li class="nav-item dropdown">
@@ -78,11 +79,11 @@
     
 <p>An aid convoy is routed before the day’s travel times are known, so
 they are estimated from features and the fastest-looking path is taken.
-A paved arterial’s time is easy to predict and rarely decides the route.
+A main road’s time is easy to predict and rarely decides the route.
 Flood depth on a low crossing is hard to predict, yet it flips the route
-the day the crossing floods. A model tuned only for prediction spends
-its few feature slots on the arterial and drops the flood depth, then
-sends a truck into the washout.</p>
+the day the crossing floods. A model tuned only for prediction keeps the
+main road and drops the flood depth, then sends a truck onto the flooded
+crossing.</p>
 <p>dflasso keeps the features that move the route, weak predictors
 included, and refits. This vignette walks the whole loop on the
 <code>aid_routing</code> data: build the rows, fit, decide tomorrow’s
@@ -140,9 +141,7 @@ arc) pairs never get a time and many days are set aside for scoring.
 Every observed time trains the cost model; a day counts for scoring only
 when every arc the router might use has an observed time, so most days
 are set aside by design. These few rows are clean, but across the full
-panel only about 45% of days clear the bar for scoring; that fraction is
-normal when only the driven path is observed. The observed-time count
-and the missing count both print, so a mis-join cannot hide.</p>
+panel only about 45% of days clear the bar for scoring.</p>
 </div>
 <div class="section level2">
 <h2 id="fit-it">Fit it<a class="anchor" aria-label="anchor" href="#fit-it"></a>
@@ -151,7 +150,7 @@ and the missing count both print, so a mis-join cannot hide.</p>
 reproduce the same features and decisions. The fit here lowers
 <code>n_splits</code> from the default of 15 to 10 and runs sequentially
 so it knits fast; on a real graph leave the default and add
-<code>workers = 8</code> for parallel proxy splits. The
+<code>workers = 8</code> for parallel splits. The
 <code>element_id</code> argument is the per-arc label that ties model
 rows back to graph arcs; <code><a href="../reference/prepare_instances.html">prepare_instances()</a></code> builds it, and
 the <code>_new</code> and <code>_test</code> forms are the same label
@@ -202,7 +201,7 @@ reproducibility fields. The planted <code>flood_depth</code> and
 <span><span class="co">#&gt;   See ?dflasso-validation.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; HOW HARD FEATURES WERE FILTERED</span></span>
-<span><span class="co">#&gt;   Filtering strength 0.131, chosen automatically by trying many settings and</span></span>
+<span><span class="co">#&gt;   Filtering strength 0.120, chosen automatically by trying many settings and</span></span>
 <span><span class="co">#&gt;   keeping the best; smaller keeps more features. (this setting is called</span></span>
 <span><span class="co">#&gt;   lambda)</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -220,13 +219,13 @@ reproducibility fields. The planted <code>flood_depth</code> and
 reliable signal and the rescue label as a rough summary. With
 collinearity, and aggregation down to one number per scenario, a noise
 column can clear the floor on another seed. The held-out
-<code><a href="../reference/regret.html">regret()</a></code> below is the real arbiter.</p>
+<code><a href="../reference/regret.html">regret()</a></code> below is the real test.</p>
 </div>
 <div class="section level2">
 <h2 id="tomorrows-route">Tomorrow’s route<a class="anchor" aria-label="anchor" href="#tomorrows-route"></a>
 </h2>
 <p><code><a href="../reference/decide.html">decide()</a></code> needs features only, never costs, so tomorrow’s
-route always computes. Out comes an ordered arc list a driver reads.</p>
+route always computes. Out comes the route, an ordered list of arcs.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tomorrow</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prepare_instances.html">prepare_instances</a></span><span class="op">(</span><span class="va">aid_routing</span>, which <span class="op">=</span> <span class="st">"tomorrow"</span><span class="op">)</span></span>
 <span><span class="va">routes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decide.html">decide</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">tomorrow</span><span class="op">$</span><span class="va">x</span>, <span class="va">tomorrow</span><span class="op">$</span><span class="va">scenario</span>,</span>
@@ -235,7 +234,7 @@ route always computes. Out comes an ordered arc list a driver reads.</p>
 <span><span class="fu"><a href="../reference/decision-set-accessors.html">element_sequence</a></span><span class="op">(</span><span class="va">routes</span><span class="op">)</span><span class="op">[[</span><span class="st">"2026-08-12"</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="co">#&gt; [1] "arc_002" "arc_003" "arc_005" "arc_014" "arc_017"</span></span></code></pre></div>
 <p>One planted day, <code>2026-08-14</code>, closes a cut-set that
-severs every path from origin to destination. dflasso marks it
+blocks every path from origin to destination. dflasso marks it
 infeasible with a clear reason rather than crashing, and every other day
 still routes.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -270,10 +269,9 @@ is better.</p>
 <span><span class="co">#&gt;   Measured on 56 of 125 instances (45%); 69 set aside for missing costs, 0 had no feasible decision. Both approaches were compared on the same instances.</span></span></code></pre></div>
 <p>On this data the decision focus roughly halves the held-out regret.
 The exact figure shifts a little between computers and software
-versions, so read it in rounded terms. It is not guaranteed: on another
-graph the focus can lose, and dflasso reports that the same way, with
-the verdict reading “RAISED regret”. Because this held-out set is itself
-simulated, run <code><a href="../reference/regret.html">regret()</a></code> on real days before the field.</p>
+versions. It is not guaranteed: on another graph the focus can lose, and
+dflasso reports that the same way, with the verdict reading “RAISED
+regret”.</p>
 </div>
 <div class="section level2">
 <h2 id="does-it-hold-across-days-or-only-on-average">Does it hold across days, or only on average?<a class="anchor" aria-label="anchor" href="#does-it-hold-across-days-or-only-on-average"></a>

@@ -44,8 +44,8 @@ this page gathers them in one place.
   regret, also called the decision-relevance score. It is the absolute
   correlation between the feature (aggregated to instance level) and
   per-instance regret, averaged over resampled splits. As a correlation,
-  it records association rather than cause. A higher score lowers that
-  feature's penalty factor. Read it with
+  it measures association. A higher score lowers that feature's penalty
+  factor. Read it with
   [`proxy_score()`](https://Mischa-Hermans.github.io/dflasso/reference/dfl-accessors.md)
   or in the `proxy_score` column of `tidy(fit)`.
 
@@ -66,7 +66,7 @@ this page gathers them in one place.
 
 - element:
 
-  One decision atom: a road arc, a knapsack item, an asset, a
+  One unit of a decision: a road arc, a knapsack item, an asset, a
   linear-program variable, an assignment cell. It is one row of the
   feature matrix and has one cost, predicted from its own features by a
   single shared coefficient vector.
@@ -95,8 +95,8 @@ this page gathers them in one place.
   The direction of the objective, `"min"` or `"max"`. A shortest path
   minimises cost; a knapsack or allocation maximises value. Built-in
   problems fix it. On the supplied-regret path, `sense` is recorded and
-  echoed, and it sets the direction the negative-regret check reads; it
-  does not transform regret that is supplied already formed.
+  sets the direction the negative-regret check reads; it does not
+  transform regret that is supplied already formed.
 
 - penalty factor:
 

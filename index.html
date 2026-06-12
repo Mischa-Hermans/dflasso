@@ -38,6 +38,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/humanitarian-routing.html">Humanitarian routing</a></li>
+    <li><a class="dropdown-item" href="articles/custom-solver.html">A custom solver</a></li>
   </ul>
 </li>
 <li class="nav-item dropdown">
@@ -66,50 +67,58 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="dflasso">dflasso<a class="anchor" aria-label="anchor" href="#dflasso"></a>
 </h1></div>
-<p>Feature selection for predict-then-optimise problems that keeps the features that change the decision.</p>
+<p>Feature selection for predict-then-optimise problems that chooses features for better decisions, not better predictions.</p>
 <!-- badges: start -->
 
 <div class="section level2">
 <h2 id="what-it-does">What it does<a class="anchor" aria-label="anchor" href="#what-it-does"></a>
 </h2>
-<p>In a predict-then-optimise problem the decision is made before the true costs are known. Costs are estimated from features, then optimised over. Take splitting a budget across assets, where the weights are set before the returns are known: a feature can shift where the money goes while barely improving the return forecast. The same idea fits any predict-then-optimise problem, such as shortest path, knapsack, allocation, or assignment, with a custom solver for anything else.</p>
-<p>The feature that predicts cost best and the feature that changes the chosen decision are often different ones, and dflasso keeps the second kind. An ordinary lasso ranks features by how well they predict cost. dflasso ranks them by how much they change the decision, eases the penalty on the ones that move the decision most, and refits. It then solves the problem on held-out data and compares its regret with a prediction-focused model’s.</p>
-<p>The default plot places every feature by how well it predicts cost (horizontal axis) and how much it changes the decision (vertical axis). Features top-left are weak predictors that still move the allocation; an ordinary lasso drops these, and the plot marks the ones dflasso keeps as rescued. Strong predictors that leave the decision unchanged sit bottom-right.</p>
+<p>In a predict-then-optimise problem the decision is made before the true costs are known. Costs are estimated from features, then optimised over. Take routing a delivery along the shortest path, where the route is chosen before the day’s travel times are known: a feature like flood depth can flip which road is fastest while barely changing the overall time forecast. The same idea fits any predict-then-optimise problem, shortest path, knapsack, allocation or assignment, or a custom solver for one of your own.</p>
+<p>The feature that predicts cost best and the feature that changes the chosen decision might be different ones, and dflasso keeps the second kind. An ordinary lasso ranks features by how well they predict cost. dflasso ranks them by how much they change the decision, eases the penalty on the ones that move the decision most, and refits. It then solves the problem on held-out data and compares its regret with a prediction-focused model’s. Regret is how much worse a decision turns out than the best possible in hindsight; lower is better.</p>
+<p>The default plot shows this split directly: every feature placed by how well it predicts cost (horizontal axis) and how much it changes the decision (vertical axis). Features top-left are weak predictors that still change the decision; an ordinary lasso drops these, and dflasso marks the ones it keeps as rescued. Strong predictors that leave the decision unchanged sit bottom-right.</p>
 <p><img src="reference/figures/README-hero-1.png" alt="Features plotted by how well they predict cost (horizontal) and how much they change the decision (vertical); two weak predictors sit at the upper left and are kept, two strong predictors sit at the lower right, and two further features sit at the lower left and are left out." width="100%"></p>
 </div>
 <div class="section level2">
 <h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
 </h2>
-<details><summary>
-Show the steps
-</summary><ol style="list-style-type: decimal">
-<li>Fit a lasso cost model on the training instances.</li>
-<li>Score each feature by how strongly its values track the out-of-sample regret.</li>
+<ol style="list-style-type: decimal">
+<li>Fit a lasso cost model on the training instances, where one instance is a single optimisation problem.</li>
+<li>Score each feature by how strongly its values track the held-out regret.</li>
 <li>Ease the penalty on the features that move the decision most.</li>
 <li>Refit the cost model under the eased penalties.</li>
 <li>Solve each held-out instance with the new predicted costs.</li>
 <li>Score regret against a prediction-focused baseline on the same instances.</li>
-</ol></details>
+</ol>
+<p>Step 2 is the heavy one. dflasso resamples the instances, 15 times by default, and on each resample refits the lasso, re-solves the held-out instances, and correlates every feature with the resulting regret. That correlation runs in compiled C++, and the resampling loop runs in parallel when asked, through <code>dfl_control(parallel = TRUE, workers = 8)</code>. The built-in shortest-path solver and the knapsack dynamic program are compiled C++ as well; capital allocation uses lpSolve.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>dflasso is not on CRAN. Install the development version from GitHub:</p>
+<p>Install from GitHub with pak:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"Mischa-Hermans/dflasso"</span><span class="op">)</span></span></code></pre></div>
-<p>Or, with remotes:</p>
+<p>Or with remotes:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"Mischa-Hermans/dflasso"</span><span class="op">)</span></span></code></pre></div>
-<p>The Docker image includes dflasso and its dependencies; no R setup is needed:</p>
+<p>Either call installs dflasso and the R packages it needs (glmnet for the lasso, lpSolve for the built-in solvers, ggplot2 for the plots), so there is no need to install those separately; DESCRIPTION lists the full set of libraries. dflasso needs R 4.1 or newer, and installing from source compiles C++, so build tools are needed: Rtools on Windows, the Xcode command-line tools on macOS, build-essential on Linux. Check for them with <code><a href="https://pkgbuild.r-lib.org/reference/has_build_tools.html" class="external-link">pkgbuild::check_build_tools()</a></code>.</p>
+<p>A Docker image is also available, as an optional alternative to installing in R, with dflasso and its dependencies already installed, including the compiled C++, so no build tools are needed:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="ex">docker</span> pull mischahermans/dflasso:0.1.0</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">--rm</span> <span class="at">-it</span> mischahermans/dflasso:0.1.0 R</span></code></pre></div>
-<p>Installing from source compiles C++, so build tools are needed: Rtools on Windows, the Xcode command-line tools on macOS, build-essential on Linux. Check it with <code><a href="https://pkgbuild.r-lib.org/reference/has_build_tools.html" class="external-link">pkgbuild::check_build_tools()</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<p><code>capital_allocation_demo</code> splits a budget across assets. It is a single data frame with one row per asset, so the example runs without reshaping.</p>
+<p><code>capital_allocation_demo</code>, one of two datasets bundled with the package, splits a budget across assets. The other, <code>aid_routing</code>, is the routing graph the vignette works through. The allocation data is a single data frame, one row per asset in each scenario, so the example runs without reshaping; its first instance, six assets, looks like this:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">capital_allocation_demo</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"scenario"</span>, <span class="st">"asset_id"</span>, <span class="st">"feat_01"</span>, <span class="st">"feat_02"</span>, <span class="st">"realized_return"</span>, <span class="st">"split"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt;      scenario asset_id      feat_01     feat_02 realized_return split</span></span>
+<span><span class="co">#&gt; 1 scenario_01        1 -0.128381935 -1.30982050       -1.742947 train</span></span>
+<span><span class="co">#&gt; 2 scenario_01        2 -0.056131231 -1.04303952       -1.442683 train</span></span>
+<span><span class="co">#&gt; 3 scenario_01        3 -0.016996481 -0.76719019       -1.483103 train</span></span>
+<span><span class="co">#&gt; 4 scenario_01        4  0.007101835 -0.53860706       -1.467265 train</span></span>
+<span><span class="co">#&gt; 5 scenario_01        5 -0.144638908 -0.26386447       -1.480053 train</span></span>
+<span><span class="co">#&gt; 6 scenario_01        6 -0.097660480 -0.02440187       -1.262907 train</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">problem</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/capital_allocation_problem.html">capital_allocation_problem</a></span><span class="op">(</span>max_weight <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">train</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dfl_data.html">dfl_data</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">capital_allocation_demo</span>, <span class="va">split</span> <span class="op">==</span> <span class="st">"train"</span><span class="op">)</span>,</span>
@@ -123,14 +132,14 @@ Show the steps
 <span></span>
 <span><span class="va">fit</span></span>
 <span><span class="co">#&gt; &lt;DecisionFocusedLasso: solver, sense=max, 6 features, 4 kept, 150 instances scored&gt;</span></span></code></pre></div>
-<p>Each row is one element (here, one asset); the <code>scenario</code> column groups rows into an instance, which is one optimisation problem. See <code>?dflasso-glossary</code>. To use other data, supply one row per element, a scenario column grouping rows into instances, and a realised-cost column; see <code><a href="reference/dfl_data.html">?dfl_data</a></code> for the shape. For the problem, pick a constructor (<code><a href="reference/capital_allocation_problem.html">capital_allocation_problem()</a></code>, <code><a href="reference/shortest_path_problem.html">shortest_path_problem()</a></code>, <code><a href="reference/knapsack_problem.html">knapsack_problem()</a></code>) or wrap a solver with <code><a href="reference/optimization_problem.html">optimization_problem()</a></code>.</p>
+<p>Each row is one element (here, one asset); the <code>scenario</code> column groups rows into an instance, which is one optimisation problem. See <code>?dflasso-glossary</code>. To use other data, supply one row per element, a scenario column grouping rows into instances, and a realised-cost column; see <code><a href="reference/dfl_data.html">?dfl_data</a></code> for the shape. For the problem, pick a constructor (<code><a href="reference/capital_allocation_problem.html">capital_allocation_problem()</a></code>, <code><a href="reference/shortest_path_problem.html">shortest_path_problem()</a></code>, <code><a href="reference/knapsack_problem.html">knapsack_problem()</a></code>) or wrap a custom solver with <code><a href="reference/optimization_problem.html">optimization_problem()</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="outputs">Outputs<a class="anchor" aria-label="anchor" href="#outputs"></a>
 </h2>
 <p>The calls below continue from the <code>fit</code> built in Quick start.</p>
 <p><code>summary(fit)</code> reports the kept features, the eased penalties, and what is known about held-out regret.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Summary of a decision-focused cost model (dflasso)</span></span>
 <span><span class="co">#&gt; Objective: maximise value over 150 instances scored, 6 features.</span></span>
@@ -172,16 +181,28 @@ Show the steps
 <span><span class="co">#&gt; SETTINGS</span></span>
 <span><span class="co">#&gt;   main  : features put on a common scale, 10-fold cross-validation, instances must have &gt;= 2 elements.</span></span>
 <span><span class="co">#&gt;   method: all at defaults.</span></span></code></pre></div>
-<p>The penalty plot shows, for each feature whose filtering the decision focus eased, how far it was eased. A longer line means the penalty was eased more. Easing a feature’s penalty does not guarantee the refit keeps it.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"penalty"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-penalty-1.png" alt="For each feature whose filtering was eased, a line from its usual filtering strength to the eased, decision-focused strength; all move leftward, meaning easier to keep." width="100%"></p>
-<p>The coefficient path traces each feature’s effect as the model keeps more of them, with the chosen model marked.</p>
+<p><code>tidy(fit)</code> puts one row per feature into a tibble, with each feature’s coefficient, decision-relevance score and penalty, ready to sort, filter or join:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"path"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-path-1.png" alt="Coefficient paths for every feature against model size; the kept features are highlighted and a dashed line marks the chosen model." width="100%"></p>
-<p><code><a href="reference/decide.html">decide()</a></code> turns features into weights on new data, and never reads costs. The training frame stands in for new data here, to keep the example short.</p>
+<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 6</span></span>
+<span><span class="co">#&gt;   term    estimate proxy_score adaptive_weight penalty_factor role              </span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;      &lt;dbl&gt;       &lt;dbl&gt;           &lt;dbl&gt;          &lt;dbl&gt; &lt;fct&gt;             </span></span>
+<span><span class="co">#&gt; 1 feat_02    0.268      0.405           13.8            1.24  decision-relevant </span></span>
+<span><span class="co">#&gt; 2 feat_01    0.279      0.291           12.8            1.24  decision-relevant </span></span>
+<span><span class="co">#&gt; 3 feat_03    1.96       0.185            0.298          0.298 prediction-releva…</span></span>
+<span><span class="co">#&gt; 4 feat_04    1.99       0.0918           0.290          0.290 prediction-releva…</span></span>
+<span><span class="co">#&gt; 5 feat_06    0          0.108        10211.            19.5   neither           </span></span>
+<span><span class="co">#&gt; 6 feat_05    0          0.0703       64503.            60.7   neither</span></span></code></pre></div>
+<p>The penalty plot shows how far the decision focus lowered the lasso penalty on each feature it eased; a longer line means a bigger drop. Dark blue marks the features the refit then kept, as easing a penalty does not guarantee the feature is kept.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"penalty"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-penalty-1.png" alt="For each feature the decision focus eased, a line from its usual lasso penalty to the eased penalty; the features the refit kept are dark blue, the rest grey, and all move leftward to a lower penalty." width="100%"></p>
+<p>The coefficient path traces each feature’s effect as the lasso penalty relaxes, with the chosen model marked.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"path"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-path-1.png" alt="Coefficient paths against the lasso penalty, strong at the left and relaxing to the right; the kept features are highlighted by colour and linetype, and a dashed line marks the chosen model." width="100%"></p>
+<p><code><a href="reference/decide.html">decide()</a></code> turns features into weights on new data, and never reads costs. The training frame stands in for new data here, to keep the example short.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/decide.html">decide</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">train</span><span class="op">$</span><span class="va">x</span>, <span class="va">train</span><span class="op">$</span><span class="va">scenario</span>,</span>
 <span>              element_id_new <span class="op">=</span> <span class="va">train</span><span class="op">$</span><span class="va">element_id</span><span class="op">)</span></span>
 <span><span class="va">out</span></span>
@@ -199,7 +220,7 @@ Show the steps
 <span><span class="co">#&gt;   1   2   3   4   5   6 </span></span>
 <span><span class="co">#&gt; 0.0 0.0 0.0 0.0 0.5 0.5</span></span></code></pre></div>
 <p><code><a href="reference/regret.html">regret()</a></code> scores both models on the held-out test split, the instances the fit did not train on.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">test</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dfl_data.html">dfl_data</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">capital_allocation_demo</span>, <span class="va">split</span> <span class="op">==</span> <span class="st">"test"</span><span class="op">)</span>,</span>
 <span>                 features <span class="op">=</span> <span class="fu">starts_with</span><span class="op">(</span><span class="st">"feat_"</span><span class="op">)</span>,</span>
 <span>                 cost <span class="op">=</span> <span class="va">realized_return</span>, scenario <span class="op">=</span> <span class="va">scenario</span>,</span>
@@ -220,9 +241,73 @@ Show the steps
 <span><span class="co">#&gt;   Measured on 75 of 75 instances (100%); 0 set aside for missing costs, 0 had no feasible decision. Both approaches were compared on the same instances.</span></span></code></pre></div>
 <p>The demo is simulated, with two features that move the allocation while predicting return poorly. On other data the decision focus may help less, or not at all. The held-out <code><a href="reference/regret.html">regret()</a></code> is how to tell.</p>
 <p>The boxes show how the per-instance regret is spread around each average.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">score</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-regret-plot-1.png" alt="Per-instance regret of the decision-focused and prediction-focused models on the same held-out scenarios, with each average marked; the decision-focused model's average sits further left, at lower regret." width="100%"></p>
+</div>
+<div class="section level2">
+<h2 id="beyond-the-built-ins">Beyond the built-ins<a class="anchor" aria-label="anchor" href="#beyond-the-built-ins"></a>
+</h2>
+<p>The package is not limited to its built-in problems. Any optimiser that turns predicted costs into a decision can be wrapped with <code><a href="reference/optimization_problem.html">optimization_problem()</a></code> and used in place of a built-in problem. A model already written in lpSolve, igraph, ROI or a Python module can be wrapped rather than rewritten.</p>
+<p>The solver is a single function, <code>function(costs, instance)</code>: <code>costs</code> holds the predicted costs for one instance, one entry per element row in the original row order, and the function returns the decision as a numeric vector of the same length and order. The order must line up with the rows, and dflasso cannot check it. <code>sense</code> sets whether the objective is minimised or maximised.</p>
+<p>For example, a custom binary linear program that picks the <code>k</code> cheapest elements, solved with lpSolve:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cheapest_k</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/optimization_problem.html">optimization_problem</a></span><span class="op">(</span></span>
+<span>  sense <span class="op">=</span> <span class="st">"min"</span>,</span>
+<span>  solve <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">costs</span>, <span class="va">instance</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">solution</span> <span class="op">&lt;-</span> <span class="fu">lpSolve</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/lpSolve/man/lp.html" class="external-link">lp</a></span><span class="op">(</span></span>
+<span>      direction <span class="op">=</span> <span class="st">"min"</span>, objective.in <span class="op">=</span> <span class="va">costs</span>,</span>
+<span>      const.mat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fl">1</span>, nrow <span class="op">=</span> <span class="fl">1</span>, ncol <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">costs</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>      const.dir <span class="op">=</span> <span class="st">"="</span>, const.rhs <span class="op">=</span> <span class="va">instance</span><span class="op">$</span><span class="va">k</span>, all.bin <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>    <span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">solution</span><span class="op">$</span><span class="va">solution</span><span class="op">)</span></span>
+<span>  <span class="op">}</span>,</span>
+<span>  name <span class="op">=</span> <span class="st">"cheapest-k"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/solve_decision.html">solve_decision</a></span><span class="op">(</span><span class="va">cheapest_k</span>, costs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">1</span>, <span class="fl">4</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, instance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>k <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0 1 0 1 0</span></span></code></pre></div>
+<p><code><a href="reference/solve_decision.html">solve_decision()</a></code> is the quickest way to check a solver: the two cheapest of the five elements come back as a 0/1 vector in the original order. Anything the solver reads from <code>instance</code> reaches it only through <code>instances</code>, passed to <code><a href="reference/dfl_fit.html">dfl_fit()</a></code>; <code>make_instances(scenario, k = 2L)</code> attaches <code>k</code> to every instance.</p>
+<p>The fit is then the Quick start call with <code>problem = cheapest_k</code> and the instances added:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dfl_fit.html">dfl_fit</a></span><span class="op">(</span><span class="va">train</span><span class="op">$</span><span class="va">x</span>, <span class="va">train</span><span class="op">$</span><span class="va">cost</span>, <span class="va">train</span><span class="op">$</span><span class="va">scenario</span>,</span>
+<span>               problem <span class="op">=</span> <span class="va">cheapest_k</span>,</span>
+<span>               instances <span class="op">=</span> <span class="fu"><a href="reference/make_instances.html">make_instances</a></span><span class="op">(</span><span class="va">train</span><span class="op">$</span><span class="va">scenario</span>, k <span class="op">=</span> <span class="fl">2L</span><span class="op">)</span>,</span>
+<span>               element_id <span class="op">=</span> <span class="va">train</span><span class="op">$</span><span class="va">element_id</span>,</span>
+<span>               control <span class="op">=</span> <span class="fu"><a href="reference/dfl_control.html">dfl_control</a></span><span class="op">(</span>seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reads as before. Because <code><a href="reference/decide.html">decide()</a></code> and <code><a href="reference/regret.html">regret()</a></code> re-solve, they need the same instances, passed as <code>instances_new =</code> and <code>instances_test =</code>; their decisions are now 0/1 picks rather than weights. See <code>?dflasso-solvers</code> for worked assignment, transportation and spanning-tree solvers, and the order rules that matter for grid-shaped problems.</p>
+</div>
+<div class="section level2">
+<h2 id="when-regret-is-already-known">When regret is already known<a class="anchor" aria-label="anchor" href="#when-regret-is-already-known"></a>
+</h2>
+<p>A solver is only needed when dflasso must measure regret itself. When per-instance regret is already known, from a model that already runs, <code><a href="reference/dfl_score.html">dfl_score()</a></code> ranks the features by how strongly each tracks that regret, with no fit and no solver:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">6</span><span class="op">)</span></span>
+<span><span class="va">day_regret</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">45</span>, mean <span class="op">=</span> <span class="fl">4</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">day</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"day_%02d"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">day_regret</span><span class="op">)</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="va">regret</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">day_regret</span>, each <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">backtest</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  day <span class="op">=</span> <span class="va">day</span>,</span>
+<span>  feat_demand  <span class="op">=</span> <span class="va">regret</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">day</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  feat_weather <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">day</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  feat_noise   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">day</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  regret <span class="op">=</span> <span class="va">regret</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/dfl_score.html">dfl_score</a></span><span class="op">(</span><span class="va">backtest</span>, features <span class="op">=</span> <span class="fu">starts_with</span><span class="op">(</span><span class="st">"feat_"</span><span class="op">)</span>, scenario <span class="op">=</span> <span class="va">day</span>, regret <span class="op">=</span> <span class="va">regret</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Which features track decision failures?  (supplied regret, 3 features)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   rank  feature         score   reading</span></span>
+<span><span class="co">#&gt;      1  feat_demand      0.88   strongly tracks regret</span></span>
+<span><span class="co">#&gt;      2  feat_noise       0.07   no association</span></span>
+<span><span class="co">#&gt;      3  feat_weather     0.05   no association</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   score = |correlation(feature, regret)|, 0-1.</span></span>
+<span><span class="co">#&gt;   Not a validated result: with no held-out decisions dflasso can't confirm this ranking.</span></span>
+<span><span class="co">#&gt;   Valid only if the regret is OUT-OF-SAMPLE from the model being diagnosed (&gt;= 0, not in-sample, not dflasso's).</span></span>
+<span><span class="co">#&gt;   Association with decision failure. decide() needs a solver.</span></span></code></pre></div>
+<p><code><a href="reference/regret_from_objectives.html">regret_from_objectives()</a></code> and <code><a href="reference/regret_from_objectives.html">regret_from_decisions()</a></code> build that regret vector from objective values or decisions already recorded, and <code>dfl_fit(regret = ...)</code> fits the weighted lasso from supplied regret instead of solving for it.</p>
 </div>
 <div class="section level2">
 <h2 id="learn-more">Learn more<a class="anchor" aria-label="anchor" href="#learn-more"></a>
@@ -232,6 +317,7 @@ Show the steps
 <a href="https://Mischa-Hermans.github.io/dflasso/">Reference and articles</a>: the pkgdown site.</li>
 <li>
 <code><a href="articles/humanitarian-routing.html">vignette("humanitarian-routing", package = "dflasso")</a></code>: the full worked example, on humanitarian routing.</li>
+<li>Help pages: <code>?dflasso-glossary</code> for the vocabulary, with <code>?dflasso-faq</code>, <code>?dflasso-troubleshooting</code> and <code>?dflasso-validation</code> alongside.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -240,10 +326,9 @@ Show the steps
 <ul>
 <li>
 <a href="https://github.com/Mischa-Hermans/dflasso/issues" class="external-link">GitHub Issues</a>: bug reports and feature requests.</li>
-<li>A small <a href="https://reprex.tidyverse.org/" class="external-link">reprex</a> makes a report quicker to act on.</li>
 </ul>
 <hr>
-<p>Developed by <strong>Mischa Hermans</strong>, Maastricht University.</p>
+<p>Developed by <strong>Mischa Hermans</strong>, Research Master’s student in Econometrics and Operations Research at Maastricht University.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

@@ -1,32 +1,34 @@
 # dflasso
 
-Feature selection for predict-then-optimise problems that keeps the
-features that change the decision.
+Feature selection for predict-then-optimise problems that chooses
+features for better decisions, not better predictions.
 
 ## What it does
 
 In a predict-then-optimise problem the decision is made before the true
 costs are known. Costs are estimated from features, then optimised over.
-Take splitting a budget across assets, where the weights are set before
-the returns are known: a feature can shift where the money goes while
-barely improving the return forecast. The same idea fits any
-predict-then-optimise problem, such as shortest path, knapsack,
-allocation, or assignment, with a custom solver for anything else.
+Take routing a delivery along the shortest path, where the route is
+chosen before the day’s travel times are known: a feature like flood
+depth can flip which road is fastest while barely changing the overall
+time forecast. The same idea fits any predict-then-optimise problem,
+shortest path, knapsack, allocation or assignment, or a custom solver
+for one of your own.
 
 The feature that predicts cost best and the feature that changes the
-chosen decision are often different ones, and dflasso keeps the second
+chosen decision might be different ones, and dflasso keeps the second
 kind. An ordinary lasso ranks features by how well they predict cost.
 dflasso ranks them by how much they change the decision, eases the
 penalty on the ones that move the decision most, and refits. It then
 solves the problem on held-out data and compares its regret with a
-prediction-focused model’s.
+prediction-focused model’s. Regret is how much worse a decision turns
+out than the best possible in hindsight; lower is better.
 
-The default plot places every feature by how well it predicts cost
-(horizontal axis) and how much it changes the decision (vertical axis).
-Features top-left are weak predictors that still move the allocation; an
-ordinary lasso drops these, and the plot marks the ones dflasso keeps as
-rescued. Strong predictors that leave the decision unchanged sit
-bottom-right.
+The default plot shows this split directly: every feature placed by how
+well it predicts cost (horizontal axis) and how much it changes the
+decision (vertical axis). Features top-left are weak predictors that
+still change the decision; an ordinary lasso drops these, and dflasso
+marks the ones it keeps as rescued. Strong predictors that leave the
+decision unchanged sit bottom-right.
 
 ![Features plotted by how well they predict cost (horizontal) and how
 much they change the decision (vertical); two weak predictors sit at the
@@ -36,51 +38,78 @@ out.](reference/figures/README-hero-1.png)
 
 ## How it works
 
-Show the steps
-
-1.  Fit a lasso cost model on the training instances.
-2.  Score each feature by how strongly its values track the
-    out-of-sample regret.
+1.  Fit a lasso cost model on the training instances, where one instance
+    is a single optimisation problem.
+2.  Score each feature by how strongly its values track the held-out
+    regret.
 3.  Ease the penalty on the features that move the decision most.
 4.  Refit the cost model under the eased penalties.
 5.  Solve each held-out instance with the new predicted costs.
 6.  Score regret against a prediction-focused baseline on the same
     instances.
 
+Step 2 is the heavy one. dflasso resamples the instances, 15 times by
+default, and on each resample refits the lasso, re-solves the held-out
+instances, and correlates every feature with the resulting regret. That
+correlation runs in compiled C++, and the resampling loop runs in
+parallel when asked, through
+`dfl_control(parallel = TRUE, workers = 8)`. The built-in shortest-path
+solver and the knapsack dynamic program are compiled C++ as well;
+capital allocation uses lpSolve.
+
 ## Installation
 
-dflasso is not on CRAN. Install the development version from GitHub:
+Install from GitHub with pak:
 
 ``` r
 
 pak::pak("Mischa-Hermans/dflasso")
 ```
 
-Or, with remotes:
+Or with remotes:
 
 ``` r
 
 remotes::install_github("Mischa-Hermans/dflasso")
 ```
 
-The Docker image includes dflasso and its dependencies; no R setup is
-needed:
+Either call installs dflasso and the R packages it needs (glmnet for the
+lasso, lpSolve for the built-in solvers, ggplot2 for the plots), so
+there is no need to install those separately; DESCRIPTION lists the full
+set of libraries. dflasso needs R 4.1 or newer, and installing from
+source compiles C++, so build tools are needed: Rtools on Windows, the
+Xcode command-line tools on macOS, build-essential on Linux. Check for
+them with
+[`pkgbuild::check_build_tools()`](https://pkgbuild.r-lib.org/reference/has_build_tools.html).
+
+A Docker image is also available, as an optional alternative to
+installing in R, with dflasso and its dependencies already installed,
+including the compiled C++, so no build tools are needed:
 
 ``` bash
 docker pull mischahermans/dflasso:0.1.0
 docker run --rm -it mischahermans/dflasso:0.1.0 R
 ```
 
-Installing from source compiles C++, so build tools are needed: Rtools
-on Windows, the Xcode command-line tools on macOS, build-essential on
-Linux. Check it with
-[`pkgbuild::check_build_tools()`](https://pkgbuild.r-lib.org/reference/has_build_tools.html).
-
 ## Quick start
 
-`capital_allocation_demo` splits a budget across assets. It is a single
-data frame with one row per asset, so the example runs without
-reshaping.
+`capital_allocation_demo`, one of two datasets bundled with the package,
+splits a budget across assets. The other, `aid_routing`, is the routing
+graph the vignette works through. The allocation data is a single data
+frame, one row per asset in each scenario, so the example runs without
+reshaping; its first instance, six assets, looks like this:
+
+``` r
+
+head(capital_allocation_demo[, c("scenario", "asset_id", "feat_01", "feat_02", "realized_return", "split")])
+#>      scenario asset_id      feat_01     feat_02 realized_return split
+#> 1 scenario_01        1 -0.128381935 -1.30982050       -1.742947 train
+#> 2 scenario_01        2 -0.056131231 -1.04303952       -1.442683 train
+#> 3 scenario_01        3 -0.016996481 -0.76719019       -1.483103 train
+#> 4 scenario_01        4  0.007101835 -0.53860706       -1.467265 train
+#> 5 scenario_01        5 -0.144638908 -0.26386447       -1.480053 train
+#> 6 scenario_01        6 -0.097660480 -0.02440187       -1.262907 train
+```
 
 ``` r
 
@@ -109,7 +138,7 @@ for the shape. For the problem, pick a constructor
 ([`capital_allocation_problem()`](https://Mischa-Hermans.github.io/dflasso/reference/capital_allocation_problem.md),
 [`shortest_path_problem()`](https://Mischa-Hermans.github.io/dflasso/reference/shortest_path_problem.md),
 [`knapsack_problem()`](https://Mischa-Hermans.github.io/dflasso/reference/knapsack_problem.md))
-or wrap a solver with
+or wrap a custom solver with
 [`optimization_problem()`](https://Mischa-Hermans.github.io/dflasso/reference/optimization_problem.md).
 
 ## Outputs
@@ -164,31 +193,50 @@ summary(fit)
 #>   method: all at defaults.
 ```
 
-The penalty plot shows, for each feature whose filtering the decision
-focus eased, how far it was eased. A longer line means the penalty was
-eased more. Easing a feature’s penalty does not guarantee the refit
-keeps it.
+`tidy(fit)` puts one row per feature into a tibble, with each feature’s
+coefficient, decision-relevance score and penalty, ready to sort, filter
+or join:
+
+``` r
+
+tidy(fit)
+#> # A tibble: 6 × 6
+#>   term    estimate proxy_score adaptive_weight penalty_factor role              
+#>   <chr>      <dbl>       <dbl>           <dbl>          <dbl> <fct>             
+#> 1 feat_02    0.268      0.405           13.8            1.24  decision-relevant 
+#> 2 feat_01    0.279      0.291           12.8            1.24  decision-relevant 
+#> 3 feat_03    1.96       0.185            0.298          0.298 prediction-releva…
+#> 4 feat_04    1.99       0.0918           0.290          0.290 prediction-releva…
+#> 5 feat_06    0          0.108        10211.            19.5   neither           
+#> 6 feat_05    0          0.0703       64503.            60.7   neither
+```
+
+The penalty plot shows how far the decision focus lowered the lasso
+penalty on each feature it eased; a longer line means a bigger drop.
+Dark blue marks the features the refit then kept, as easing a penalty
+does not guarantee the feature is kept.
 
 ``` r
 
 plot(fit, type = "penalty")
 ```
 
-![For each feature whose filtering was eased, a line from its usual
-filtering strength to the eased, decision-focused strength; all move
-leftward, meaning easier to
-keep.](reference/figures/README-penalty-1.png)
+![For each feature the decision focus eased, a line from its usual lasso
+penalty to the eased penalty; the features the refit kept are dark blue,
+the rest grey, and all move leftward to a lower
+penalty.](reference/figures/README-penalty-1.png)
 
-The coefficient path traces each feature’s effect as the model keeps
-more of them, with the chosen model marked.
+The coefficient path traces each feature’s effect as the lasso penalty
+relaxes, with the chosen model marked.
 
 ``` r
 
 plot(fit, type = "path")
 ```
 
-![Coefficient paths for every feature against model size; the kept
-features are highlighted and a dashed line marks the chosen
+![Coefficient paths against the lasso penalty, strong at the left and
+relaxing to the right; the kept features are highlighted by colour and
+linetype, and a dashed line marks the chosen
 model.](reference/figures/README-path-1.png)
 
 [`decide()`](https://Mischa-Hermans.github.io/dflasso/reference/decide.md)
@@ -260,20 +308,135 @@ models on the same held-out scenarios, with each average marked; the
 decision-focused model's average sits further left, at lower
 regret.](reference/figures/README-regret-plot-1.png)
 
+## Beyond the built-ins
+
+The package is not limited to its built-in problems. Any optimiser that
+turns predicted costs into a decision can be wrapped with
+[`optimization_problem()`](https://Mischa-Hermans.github.io/dflasso/reference/optimization_problem.md)
+and used in place of a built-in problem. A model already written in
+lpSolve, igraph, ROI or a Python module can be wrapped rather than
+rewritten.
+
+The solver is a single function, `function(costs, instance)`: `costs`
+holds the predicted costs for one instance, one entry per element row in
+the original row order, and the function returns the decision as a
+numeric vector of the same length and order. The order must line up with
+the rows, and dflasso cannot check it. `sense` sets whether the
+objective is minimised or maximised.
+
+For example, a custom binary linear program that picks the `k` cheapest
+elements, solved with lpSolve:
+
+``` r
+
+cheapest_k <- optimization_problem(
+  sense = "min",
+  solve = function(costs, instance) {
+    solution <- lpSolve::lp(
+      direction = "min", objective.in = costs,
+      const.mat = matrix(1, nrow = 1, ncol = length(costs)),
+      const.dir = "=", const.rhs = instance$k, all.bin = TRUE
+    )
+    as.numeric(solution$solution)
+  },
+  name = "cheapest-k"
+)
+
+solve_decision(cheapest_k, costs = c(5, 1, 4, 2, 3), instance = list(k = 2))
+#> [1] 0 1 0 1 0
+```
+
+[`solve_decision()`](https://Mischa-Hermans.github.io/dflasso/reference/solve_decision.md)
+is the quickest way to check a solver: the two cheapest of the five
+elements come back as a 0/1 vector in the original order. Anything the
+solver reads from `instance` reaches it only through `instances`, passed
+to
+[`dfl_fit()`](https://Mischa-Hermans.github.io/dflasso/reference/dfl_fit.md);
+`make_instances(scenario, k = 2L)` attaches `k` to every instance.
+
+The fit is then the Quick start call with `problem = cheapest_k` and the
+instances added:
+
+``` r
+
+fit <- dfl_fit(train$x, train$cost, train$scenario,
+               problem = cheapest_k,
+               instances = make_instances(train$scenario, k = 2L),
+               element_id = train$element_id,
+               control = dfl_control(seed = 1))
+```
+
+[`summary()`](https://rdrr.io/r/base/summary.html) reads as before.
+Because
+[`decide()`](https://Mischa-Hermans.github.io/dflasso/reference/decide.md)
+and
+[`regret()`](https://Mischa-Hermans.github.io/dflasso/reference/regret.md)
+re-solve, they need the same instances, passed as `instances_new =` and
+`instances_test =`; their decisions are now 0/1 picks rather than
+weights. See `?dflasso-solvers` for worked assignment, transportation
+and spanning-tree solvers, and the order rules that matter for
+grid-shaped problems.
+
+## When regret is already known
+
+A solver is only needed when dflasso must measure regret itself. When
+per-instance regret is already known, from a model that already runs,
+[`dfl_score()`](https://Mischa-Hermans.github.io/dflasso/reference/dfl_score.md)
+ranks the features by how strongly each tracks that regret, with no fit
+and no solver:
+
+``` r
+
+set.seed(6)
+day_regret <- pmax(0, rnorm(45, mean = 4, sd = 2))
+day <- rep(sprintf("day_%02d", seq_along(day_regret)), each = 3)
+regret <- rep(day_regret, each = 3)
+
+backtest <- data.frame(
+  day = day,
+  feat_demand  = regret + rnorm(length(day), sd = 2),
+  feat_weather = rnorm(length(day)),
+  feat_noise   = rnorm(length(day)),
+  regret = regret
+)
+
+dfl_score(backtest, features = starts_with("feat_"), scenario = day, regret = regret)
+#> Which features track decision failures?  (supplied regret, 3 features)
+#> 
+#>   rank  feature         score   reading
+#>      1  feat_demand      0.88   strongly tracks regret
+#>      2  feat_noise       0.07   no association
+#>      3  feat_weather     0.05   no association
+#> 
+#>   score = |correlation(feature, regret)|, 0-1.
+#>   Not a validated result: with no held-out decisions dflasso can't confirm this ranking.
+#>   Valid only if the regret is OUT-OF-SAMPLE from the model being diagnosed (>= 0, not in-sample, not dflasso's).
+#>   Association with decision failure. decide() needs a solver.
+```
+
+[`regret_from_objectives()`](https://Mischa-Hermans.github.io/dflasso/reference/regret_from_objectives.md)
+and
+[`regret_from_decisions()`](https://Mischa-Hermans.github.io/dflasso/reference/regret_from_objectives.md)
+build that regret vector from objective values or decisions already
+recorded, and `dfl_fit(regret = ...)` fits the weighted lasso from
+supplied regret instead of solving for it.
+
 ## Learn more
 
 - [Reference and articles](https://Mischa-Hermans.github.io/dflasso/):
   the pkgdown site.
 - [`vignette("humanitarian-routing", package = "dflasso")`](https://Mischa-Hermans.github.io/dflasso/articles/humanitarian-routing.md):
   the full worked example, on humanitarian routing.
+- Help pages: `?dflasso-glossary` for the vocabulary, with
+  `?dflasso-faq`, `?dflasso-troubleshooting` and `?dflasso-validation`
+  alongside.
 
 ## Getting help
 
 - [GitHub Issues](https://github.com/Mischa-Hermans/dflasso/issues): bug
   reports and feature requests.
-- A small [reprex](https://reprex.tidyverse.org/) makes a report quicker
-  to act on.
 
 ------------------------------------------------------------------------
 
-Developed by **Mischa Hermans**, Maastricht University.
+Developed by **Mischa Hermans**, Research Master’s student in
+Econometrics and Operations Research at Maastricht University.

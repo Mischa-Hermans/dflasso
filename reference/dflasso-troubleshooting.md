@@ -1,21 +1,20 @@
 # Troubleshooting: when something goes wrong
 
 A symptom, its likely cause, and what to do. Some entries describe
-dflasso working as designed: a reported no-win, a valid but lopsided
-optimum, a low match rate. Each fix points at the function or page that
-owns it.
+dflasso working as designed: a reported no-win, a valid corner solution,
+a low match rate. Each fix points at the function or page that owns it.
 
 ## The package will not install
 
 `install_github` ends in compiler, `make`, or `g++` errors rather than a
 dflasso message. dflasso compiles a little C++ on install and no C++
-toolchain is present. Install a compiler first, then install dflasso. On
+compiler is present. Install a compiler first, then install dflasso. On
 Windows that is Rtools, matched to the R major version, then restart R.
 On macOS it is the Xcode command-line tools, `xcode-select --install`.
 On Linux it is build-essential or the Development Tools group. Check
 with
 [`pkgbuild::check_build_tools()`](https://pkgbuild.r-lib.org/reference/has_build_tools.html).
-With no local toolchain, use the repository's `Dockerfile`.
+With no local build tools, use the repository's `Dockerfile`.
 
 ## It installed but library(dflasso) errors
 
@@ -73,9 +72,9 @@ or lower `nfolds`. When fewer scenarios survive than the requested
 rather than stopping; raise the row count or lower `nfolds` to silence
 that.
 
-## The fit is very slow or looks hung
+## The fit is very slow or looks stuck
 
-The decision-quality step runs `solve` about 5.5 times for every fully
+The decision-quality step runs `solve` several times for every fully
 covered instance, so many instances or a slow `solve` add up. By default
 an interactive session prints one start line and a `Done.` for this step
 while a script stays silent; change it with `progress` in
@@ -83,9 +82,9 @@ while a script stays silent; change it with `progress` in
 To speed it up, move any cost-independent setup out of `solve` and into
 the `instance` object (a prebuilt graph, matrix, or index) so each call
 does the minimum. Then set `workers = parallel::detectCores() - 1`,
-which helps when instances are many or `solve` is slow and adds overhead
-on a tiny fit. Last, lower `n_splits` if noisier scores are acceptable.
-Sequential and parallel runs give bit-identical results.
+which helps when instances are many or `solve` is slow. Last, lower
+`n_splits` if noisier scores are acceptable. Sequential and parallel
+runs give bit-identical results.
 
 ## decide() reports many instances infeasible
 
@@ -93,7 +92,7 @@ For those instances `solve` found no valid decision, for example a
 destination unreachable after closures. The batch still runs; every
 feasible instance returns its decision. Read `infeasible_reasons(out)`,
 a tibble of `scenario` and the specific reason, and check that
-instance's graph, closures, or capacity. A cut-set that severs every
+instance's graph, closures, or capacity. A cut-set that blocks every
 origin-to-destination path is the usual cause. `feasible(out)` holds
 only the instances that decided; `names(which(!is_feasible(out)))` lists
 the failing ids.
@@ -180,7 +179,7 @@ closure.
 ## "solve for scenario '...' returned a vector of length m"
 
 `solve` returned the wrong number of values, or a non-numeric, `NA`, or
-`Inf` vector. The eager probe caught it before any model was fit. Return
+`Inf` vector. The eager check caught it before any model was fit. Return
 exactly one finite number per element row of that instance, in row order
 (0/1, or a weight). For grids, fix on row-major or column-major and use
 it both when building rows and when flattening the solution, the
@@ -202,9 +201,9 @@ to reproduce the routes exactly.
 ## Two mistakes, but only one shows
 
 Structural checks run all at once per phase (structure, then the solver
-probe, then coverage), and every check in a phase fires before any model
+check, then coverage), and every check in a phase fires before any model
 is fit. Read the whole list (up to about 8 problems with a `(+k more)`
-tail) and fix them together in one round-trip.
+tail) and fix them together in one pass.
 
 ## See also
 

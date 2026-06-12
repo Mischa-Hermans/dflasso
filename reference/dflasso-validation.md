@@ -1,19 +1,16 @@
-# Deciding whether to trust and deploy a dflasso model
+# Reading a dflasso result on held-out data
 
-A checklist for deciding whether a fitted model is worth acting on. It
-is five steps run at the console, each calling a verb that already
-exists, and adds no new function or option. Run them on a held-out test
-set the model never saw, prepared the same way as training.
+A guide to reading a fitted model's results on a held-out test set the
+model never saw, prepared the same way as training. It covers five
+things to look at, each with a call that already exists.
 
-One caveat first. On the solver path
+The five sections below are for the solver path, where
 [`regret()`](https://Mischa-Hermans.github.io/dflasso/reference/regret.md)
-re-solves held-out instances on real costs, so the comparison is
-measured rather than inferred. On the supplied-regret path the
+re-solves held-out instances on real costs. On the supplied-regret path
+there are no held-out decisions to score against, so the
 [`dfl_score()`](https://Mischa-Hermans.github.io/dflasso/reference/dfl_score.md)
-ranking is a correlational signal: with no held-out decisions there is
-nothing to back-test it against, so a high score marks an association
-with decision failure and stops short of proving cause or guaranteeing
-anything. The steps below are for the solver path.
+ranking is an association that cannot be back-tested; read it as a lead,
+not a result.
 
 ## With only one dataset
 
@@ -56,24 +53,21 @@ better mean, and this plot is where they surface.
 
 ## Step 3, the rescued features
 
-Whether the rescued features are plausible. The scores measure
-association and carry no causal claim.
+Which features were rescued, and how strong their scores are. The scores
+measure association.
 
     plot(model, type = "roles")
     subset(tidy(model), role == "decision-relevant")
 
-A plausible result has rescued features a domain expert would recognise,
-with `proxy_score` clearly off the floor. Weaker signs: rescues that are
-noise columns with no explanation, or every score barely above the
-floor. Read the y-axis as labelled. Tracking when the decision goes
-wrong reports an association with decision failure and says nothing
-about cause.
+A strong result has rescued features with `proxy_score` clearly off the
+floor. A weaker one has rescues that are noise columns, or every score
+barely above the floor. Read the y-axis as labelled; the score tracks
+how a feature moves with decision regret.
 
-The confound to name here is collinearity. A feature can score high only
-because it is correlated with a genuinely decisive feature; the proxy
-sees the shared movement and cannot separate the two. A high score then
-marks a lead to investigate, and does not show that the feature itself
-drives the decision.
+Collinearity is worth keeping in mind. A feature can score high because
+it is correlated with a genuinely decisive feature; the proxy sees the
+shared movement and cannot separate the two, so a high score marks a
+lead to check rather than a settled one.
 
 ## Step 4, stability across seeds
 
@@ -126,23 +120,22 @@ rather than the precise percent. Where possible, corroborate on a second
 disjoint split or a later time window; agreement in direction across two
 splits carries more weight than the exact number on one.
 
-## What to have in hand before acting
+## Reading the four checks together
 
-Four things point the same way before a fit is worth acting on: held-out
+A consistent result reads the same across them: held-out
 [`regret()`](https://Mischa-Hermans.github.io/dflasso/reference/regret.md)
-lower relative to the spread; the result keeping its sign across a
-couple of seeds; rescued features that make sense to an expert; and a
-count of scored instances that is not tiny. A training-data number, a
-single seed, or a hair-thin gap inside the spread is too little to act
-on.
+lower relative to the spread, the sign holding across a couple of seeds,
+rescued features with scores off the floor, and a count of scored
+instances that is not tiny. A training-data number, a single seed, or a
+hair-thin gap inside the spread is a thin basis to read much into.
 
-Several outcomes point the other way. A held-out regret that did not
-drop is a correct result the package is built to give; the
-prediction-focused model stands, with the comparison learned. Where the
+Some results read the other way, and each is a normal output. A held-out
+regret that did not drop is one the package is built to report; the
+prediction-focused model is the one that scored better here. Where the
 in-fit preview looked good but held-out did not, the held-out number is
-the one that counts. Where a single seed looked good but the regret sign
-flipped, the gain did not hold up. A gain on a handful of instances, or
-on one split, is a lead to confirm rather than a settled result.
+the measured one. Where a single seed looked good but the regret sign
+flipped, the result did not hold across seeds. A gain on a handful of
+instances, or on one split, is a lead to confirm on more.
 
 ## Why regret, and why held-out
 

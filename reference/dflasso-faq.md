@@ -13,12 +13,11 @@ value, a portfolio's total return. Costs are real numbers on a scale. A
 sort, a knapsack, a shortest path, an assignment, or a linear program is
 in scope.
 
-Two shapes are out of scope. An objective that is not linear in the
+One shape is out of scope: an objective that is not linear in the
 predicted cost (a variance term, a product of decisions) breaks the
 regret check, though
 [`decide()`](https://Mischa-Hermans.github.io/dflasso/reference/decide.md)
-will still run whatever `solve` returns. Pure prediction with no
-downstream decision is a job for glmnet.
+will still run whatever `solve` returns.
 
 ## Why not target prediction error?
 
@@ -88,9 +87,7 @@ count suggests. An instance counts toward the decision-quality step only
 if every element the solver could inspect has an observed cost. If fully
 covered instances drop below about 30, dflasso warns that the scores
 will be noisier and the fit still proceeds. The fix is more fully
-covered instances. Raising `n_splits` to 30 or 50 averages over more
-resamples but adds no signal. Raising `min_elements_per_scenario` does
-not help, because coverage is a separate completeness test.
+covered instances.
 
 ## Are true costs needed for every element?
 
@@ -112,8 +109,7 @@ reproducible across re-runs, and identical whether the run is sequential
 or parallel. The only random step is how instances are resampled to
 score features. Turn on parallelism with
 `dfl_control(workers = parallel::detectCores() - 1)`; it helps when
-instances are many or `solve` is slow, and adds only overhead on a small
-fit.
+instances are many or `solve` is slow.
 [`decide()`](https://Mischa-Hermans.github.io/dflasso/reference/decide.md)
 and [`predict()`](https://rdrr.io/r/stats/predict.html) draw no
 randomness.

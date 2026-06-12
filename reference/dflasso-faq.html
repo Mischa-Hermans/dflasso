@@ -24,6 +24,7 @@ when something breaks see ?dflasso-troubleshooting."></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/humanitarian-routing.html">Humanitarian routing</a></li>
+    <li><a class="dropdown-item" href="../articles/custom-solver.html">A custom solver</a></li>
   </ul></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-concepts" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Concepts</button>
@@ -65,10 +66,9 @@ estimated from features, and the objective is a sum of cost times decision
 over the elements: a route's total time, a basket's total value, a
 portfolio's total return. Costs are real numbers on a scale. A sort, a
 knapsack, a shortest path, an assignment, or a linear program is in scope.</p>
-<p>Two shapes are out of scope. An objective that is not linear in the predicted
+<p>One shape is out of scope: an objective that is not linear in the predicted
 cost (a variance term, a product of decisions) breaks the regret check, though
-<code><a href="decide.html">decide()</a></code> will still run whatever <code>solve</code> returns. Pure prediction with no
-downstream decision is a job for <span class="pkg">glmnet</span>.</p>
+<code><a href="decide.html">decide()</a></code> will still run whatever <code>solve</code> returns.</p>
     </div>
     <div class="section level2">
     <h2 id="why-not-target-prediction-error-">Why not target prediction error?<a class="anchor" aria-label="anchor" href="#why-not-target-prediction-error-"></a></h2>
@@ -128,10 +128,7 @@ suggests. An
 instance counts toward the decision-quality step only if every element the
 solver could inspect has an observed cost. If fully covered instances drop
 below about 30, dflasso warns that the scores will be noisier and the fit
-still proceeds. The fix is more fully covered instances. Raising <code>n_splits</code> to
-30 or 50 averages over more resamples but adds no signal. Raising
-<code>min_elements_per_scenario</code> does not help, because coverage is a separate
-completeness test.</p>
+still proceeds. The fix is more fully covered instances.</p>
     </div>
     <div class="section level2">
     <h2 id="are-true-costs-needed-for-every-element-">Are true costs needed for every element?<a class="anchor" aria-label="anchor" href="#are-true-costs-needed-for-every-element-"></a></h2>
@@ -153,7 +150,7 @@ still trains the model.</p>
 across re-runs, and identical whether the run is sequential or parallel. The only random step is
 how instances are resampled to score features. Turn on parallelism with
 <code>dfl_control(workers = parallel::detectCores() - 1)</code>; it helps when instances
-are many or <code>solve</code> is slow, and adds only overhead on a small fit. <code><a href="decide.html">decide()</a></code>
+are many or <code>solve</code> is slow. <code><a href="decide.html">decide()</a></code>
 and <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> draw no randomness.</p>
 <p>To reproduce an earlier fit, feed its seed back with
 <code>dfl_control(seed = seed(fit))</code>.</p>

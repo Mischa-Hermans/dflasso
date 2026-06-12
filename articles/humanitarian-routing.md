@@ -2,11 +2,11 @@
 
 An aid convoy is routed before the day’s travel times are known, so they
 are estimated from features and the fastest-looking path is taken. A
-paved arterial’s time is easy to predict and rarely decides the route.
-Flood depth on a low crossing is hard to predict, yet it flips the route
-the day the crossing floods. A model tuned only for prediction spends
-its few feature slots on the arterial and drops the flood depth, then
-sends a truck into the washout.
+main road’s time is easy to predict and rarely decides the route. Flood
+depth on a low crossing is hard to predict, yet it flips the route the
+day the crossing floods. A model tuned only for prediction keeps the
+main road and drops the flood depth, then sends a truck onto the flooded
+crossing.
 
 dflasso keeps the features that move the route, weak predictors
 included, and refits. This vignette walks the whole loop on the
@@ -74,18 +74,16 @@ pairs never get a time and many days are set aside for scoring. Every
 observed time trains the cost model; a day counts for scoring only when
 every arc the router might use has an observed time, so most days are
 set aside by design. These few rows are clean, but across the full panel
-only about 45% of days clear the bar for scoring; that fraction is
-normal when only the driven path is observed. The observed-time count
-and the missing count both print, so a mis-join cannot hide.
+only about 45% of days clear the bar for scoring.
 
 ## Fit it
 
 One call with sensible defaults. With the seed named, re-runs reproduce
 the same features and decisions. The fit here lowers `n_splits` from the
 default of 15 to 10 and runs sequentially so it knits fast; on a real
-graph leave the default and add `workers = 8` for parallel proxy splits.
-The `element_id` argument is the per-arc label that ties model rows back
-to graph arcs;
+graph leave the default and add `workers = 8` for parallel splits. The
+`element_id` argument is the per-arc label that ties model rows back to
+graph arcs;
 [`prepare_instances()`](https://Mischa-Hermans.github.io/dflasso/reference/prepare_instances.md)
 builds it, and the `_new` and `_test` forms are the same label for
 [`decide()`](https://Mischa-Hermans.github.io/dflasso/reference/decide.md)
@@ -144,7 +142,7 @@ summary(model)
 #>   See ?dflasso-validation.
 #> 
 #> HOW HARD FEATURES WERE FILTERED
-#>   Filtering strength 0.131, chosen automatically by trying many settings and
+#>   Filtering strength 0.120, chosen automatically by trying many settings and
 #>   keeping the best; smaller keeps more features. (this setting is called
 #>   lambda)
 #> 
@@ -165,13 +163,13 @@ summary. With collinearity, and aggregation down to one number per
 scenario, a noise column can clear the floor on another seed. The
 held-out
 [`regret()`](https://Mischa-Hermans.github.io/dflasso/reference/regret.md)
-below is the real arbiter.
+below is the real test.
 
 ## Tomorrow’s route
 
 [`decide()`](https://Mischa-Hermans.github.io/dflasso/reference/decide.md)
 needs features only, never costs, so tomorrow’s route always computes.
-Out comes an ordered arc list a driver reads.
+Out comes the route, an ordered list of arcs.
 
 ``` r
 
@@ -183,7 +181,7 @@ element_sequence(routes)[["2026-08-12"]]
 #> [1] "arc_002" "arc_003" "arc_005" "arc_014" "arc_017"
 ```
 
-One planted day, `2026-08-14`, closes a cut-set that severs every path
+One planted day, `2026-08-14`, closes a cut-set that blocks every path
 from origin to destination. dflasso marks it infeasible with a clear
 reason rather than crashing, and every other day still routes.
 
@@ -222,13 +220,9 @@ result
 ```
 
 On this data the decision focus roughly halves the held-out regret. The
-exact figure shifts a little between computers and software versions, so
-read it in rounded terms. It is not guaranteed: on another graph the
-focus can lose, and dflasso reports that the same way, with the verdict
-reading “RAISED regret”. Because this held-out set is itself simulated,
-run
-[`regret()`](https://Mischa-Hermans.github.io/dflasso/reference/regret.md)
-on real days before the field.
+exact figure shifts a little between computers and software versions. It
+is not guaranteed: on another graph the focus can lose, and dflasso
+reports that the same way, with the verdict reading “RAISED regret”.
 
 ## Does it hold across days, or only on average?
 

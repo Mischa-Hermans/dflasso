@@ -163,4 +163,4 @@ read when something looks off.
 - [`dflasso-troubleshooting`](https://Mischa-Hermans.github.io/dflasso/reference/dflasso-troubleshooting.md)
   : Troubleshooting: when something goes wrong
 - [`dflasso-validation`](https://Mischa-Hermans.github.io/dflasso/reference/dflasso-validation.md)
-  : Deciding whether to trust and deploy a dflasso model
+  : Reading a dflasso result on held-out data

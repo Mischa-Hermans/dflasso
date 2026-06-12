@@ -52,7 +52,7 @@ print(x, ...)
 - sense:
 
   Objective sense of the diagnosed model, `"min"` (default) or `"max"`.
-  Recorded and echoed, not used to transform supplied regret.
+  Recorded, not used to transform supplied regret.
 
 - control:
 
@@ -72,7 +72,7 @@ An S3 `dfl_score` object: a ranked tibble with columns `rank`, `term`,
 `proxy_score`, `role` (an ordered factor, `decision-relevant` or
 `neither`), and `reading` (a plain gloss of the score band). Its
 [`print()`](https://rdrr.io/r/base/print.html) shows the ranking and the
-heuristic-not-validated footer.
+not-validated footer.
 
 ## See also
 
@@ -111,7 +111,7 @@ dfl_score(
 #>      3  feat_speed       0.54   strongly tracks regret
 #> 
 #>   score = |correlation(feature, regret)|, 0-1.
-#>   Heuristic, not a validated result: with no held-out decisions dflasso can't confirm this ranking.
+#>   Not a validated result: with no held-out decisions dflasso can't confirm this ranking.
 #>   Valid only if the regret is OUT-OF-SAMPLE from the model being diagnosed (>= 0, not in-sample, not dflasso's).
-#>   Association with decision failure, not proof of cause. decide() needs a solver.
+#>   Association with decision failure. decide() needs a solver.
 ```

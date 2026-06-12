@@ -24,6 +24,7 @@ solver that dfl_fit() runs."></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/humanitarian-routing.html">Humanitarian routing</a></li>
+    <li><a class="dropdown-item" href="../articles/custom-solver.html">A custom solver</a></li>
   </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-concepts" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Concepts</button>
@@ -99,7 +100,7 @@ regret (matrix form). One value per scenario.</p></dd>
 
 <dt id="arg-sense">sense<a class="anchor" aria-label="anchor" href="#arg-sense"></a></dt>
 <dd><p>Objective sense of the diagnosed model, <code>"min"</code> (default) or
-<code>"max"</code>. Recorded and echoed, not used to transform supplied regret.</p></dd>
+<code>"max"</code>. Recorded, not used to transform supplied regret.</p></dd>
 
 
 <dt id="arg-control">control<a class="anchor" aria-label="anchor" href="#arg-control"></a></dt>
@@ -119,7 +120,7 @@ regret (matrix form). One value per scenario.</p></dd>
     <p>An S3 <code>dfl_score</code> object: a ranked tibble with columns <code>rank</code>, <code>term</code>,
 <code>proxy_score</code>, <code>role</code> (an ordered factor, <code>decision-relevant</code> or
 <code>neither</code>), and <code>reading</code> (a plain gloss of the score band). Its <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>
-shows the ranking and the heuristic-not-validated footer.</p>
+shows the ranking and the not-validated footer.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -153,9 +154,9 @@ shows the ranking and the heuristic-not-validated footer.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      3  feat_speed       0.54   strongly tracks regret</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   score = |correlation(feature, regret)|, 0-1.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Heuristic, not a validated result: with no held-out decisions dflasso can't confirm this ranking.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Not a validated result: with no held-out decisions dflasso can't confirm this ranking.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Valid only if the regret is OUT-OF-SAMPLE from the model being diagnosed (&gt;= 0, not in-sample, not dflasso's).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Association with decision failure, not proof of cause. decide() needs a solver.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Association with decision failure. decide() needs a solver.</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
