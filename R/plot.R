@@ -92,32 +92,30 @@ setMethod("plot", signature(x = "DecisionFocusedLasso", y = "missing"),
 plot_roles <- function(object) {
   data <- roles_data(object)
   rescued <- data[data$role %in% c("decision-relevant", "both"), , drop = FALSE]
+  backdrop <- data[!data$role %in% c("decision-relevant", "both"), , drop = FALSE]
+  present_roles <- intersect(names(role_labels), as.character(data$role))
   plot_object <- ggplot2::ggplot(
     data,
     ggplot2::aes(x = .data$prediction_relevance, y = .data$proxy_score,
                  colour = .data$role)
   ) +
-    ggplot2::geom_point(
-      data = data[data$role == "neither", , drop = FALSE], alpha = 0.6,
-      size = 2
-    ) +
+    ggplot2::geom_point(data = backdrop, alpha = 0.6, size = 2) +
     ggplot2::geom_point(data = rescued, size = 3.2) +
     ggplot2::scale_colour_manual(
-      values = okabe_ito[names(role_labels)], labels = role_labels,
-      breaks = names(role_labels), drop = FALSE, name = "Feature role"
+      values = okabe_ito[names(role_labels)], labels = role_labels[present_roles],
+      breaks = present_roles, drop = FALSE, name = "Feature role"
     ) +
     ggplot2::labs(
-      title = "Which features were kept for the decision, not for prediction",
+      title = "Which features were kept for the decision",
       subtitle = paste0(
         "Top-left = rescued: weak at predicting cost, but they change the ",
         "decision."
       ),
-      x = "Looks useful for predicting cost",
-      y = "Tracks when the decision goes wrong",
+      x = "How well it predicts cost",
+      y = "How much it changes the decision",
       caption = paste0(
-        "This shows a link, not proof of cause. The horizontal axis is the ",
-        "same quantity shown\nin plot(fit, type = \"penalty\"), read as ",
-        "importance. See tidy(fit) for the score behind each point."
+        "Position shows association; it is not proof of cause. ",
+        "See tidy(fit) for the score behind each point."
       )
     ) +
     dfl_theme()
@@ -198,8 +196,8 @@ plot_path <- function(object) {
     ) +
     ggplot2::geom_vline(xintercept = chosen, linetype = "dashed",
                         colour = "#555555") +
-    ggplot2::annotate("text", x = chosen, y = Inf, label = "chosen model",
-                      hjust = -0.05, vjust = 1.4, size = 3, colour = "#555555") +
+    ggplot2::annotate("text", x = chosen, y = -Inf, label = "chosen model",
+                      hjust = 1.05, vjust = -0.8, size = 3, colour = "#555555") +
     ggplot2::scale_colour_manual(
       values = okabe_ito[names(role_labels)], labels = role_labels,
       breaks = names(role_labels), drop = FALSE, name = "Feature role"
@@ -218,7 +216,9 @@ plot_path <- function(object) {
         "marks the chosen model."
       )
     ) +
-    dfl_theme()
+    dfl_theme() +
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                   axis.ticks.x = ggplot2::element_blank())
   add_feature_labels(plot_object, ends, "log_lambda", "estimate")
 }
 
@@ -277,7 +277,7 @@ autoplot.dfl_regret <- function(object, ...) {
     ggplot2::scale_colour_manual(values = fill_values, name = "Model") +
     ggplot2::labs(
       title = "How much worse than the best possible, per instance",
-      subtitle = "Lower is better. The diamond is the printed average.",
+      subtitle = "The diamond is the printed average.",
       x = "Regret on one instance (0 = best possible; lower is better)",
       y = NULL,
       caption = paste0(
@@ -286,7 +286,8 @@ autoplot.dfl_regret <- function(object, ...) {
         "mean hides."
       )
     ) +
-    dfl_theme()
+    dfl_theme() +
+    ggplot2::theme(legend.position = "none")
 }
 
 #' @rdname plot.dfl_regret

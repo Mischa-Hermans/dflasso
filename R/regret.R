@@ -298,18 +298,18 @@ head_to_head_lines <- function(x) {
 
 regret_verdict <- function(decision, baseline) {
   if (!is.finite(baseline) || baseline == 0) {
-    return("  -> regret comparison undefined (baseline regret is zero).")
+    return("  Regret comparison undefined (baseline regret is zero).")
   }
   percent <- abs(decision - baseline) / baseline * 100
   if (decision <= baseline) {
     return(sprintf(
-      "  -> the decision focus cut regret by %s%% on this held-out data.",
+      "  The decision focus cut regret by %s%% on this held-out data.",
       format_percent(percent)
     ))
   }
   sprintf(
     paste0(
-      "  -> the decision focus RAISED regret by %s%% on this held-out data; ",
+      "  The decision focus RAISED regret by %s%% on this held-out data; ",
       "it lost here."
     ),
     format_percent(percent)
@@ -326,7 +326,7 @@ coverage_line <- function(x) {
     paste0(
       "  Measured on %d of %d instances (%d%%); %d set aside for missing ",
       "costs, %d had no feasible decision. Both approaches were compared on ",
-      "the very same instances."
+      "the same instances."
     ),
     x$n_proxy_eligible, x$n_instances, percent, x$n_partial_coverage,
     x$n_infeasible
